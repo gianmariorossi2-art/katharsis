@@ -3,3 +3,6 @@ dist/
 .env
 .env.local
 .DS_Store
+# workspace lock files — regenerated per-platform on Railway
+client/package-lock.json
+server/package-lock.json
