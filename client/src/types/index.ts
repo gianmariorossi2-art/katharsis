@@ -30,6 +30,7 @@ export interface UserProfile {
   current_streak: number;
   record_streak: number;
   subscription_status: 'free' | 'premium';
+  language?: string;
   created_at: string;
 }
 

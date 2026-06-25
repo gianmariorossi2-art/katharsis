@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useApp } from '@/contexts/AppContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n';
 import type { ZodiacSign, Mood } from '@/types';
 import GlowCard from '@/components/GlowCard';
 import { LEVELS, getLevelInfo, getProgressPercent } from '@/lib/gamification';
@@ -18,6 +21,17 @@ const MOOD_EMOJIS: Record<Mood, string> = {
   curioso: '🔍',
   malinconico: '😔',
 };
+
+const LANGUAGES = [
+  { code: 'it', label: 'Italiano', flag: '🇮🇹' },
+  { code: 'en', label: 'English', flag: '🇬🇧' },
+  { code: 'es', label: 'Español', flag: '🇪🇸' },
+  { code: 'uk', label: 'Українська', flag: '🇺🇦' },
+  { code: 'fr', label: 'Français', flag: '🇫🇷' },
+  { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
+  { code: 'pt', label: 'Português', flag: '🇵🇹' },
+  { code: 'pl', label: 'Polski', flag: '🇵🇱' },
+];
 
 function ProfileHeroVisual({ initial }: { initial: string }) {
   return (
@@ -62,8 +76,11 @@ function ProfileHeroVisual({ initial }: { initial: string }) {
 export default function Profile() {
   const shouldReduceMotion = useReducedMotion();
   const { userProfile, checkins, updateProfile } = useApp();
+  const { signOut } = useAuth();
+  const { t } = useTranslation();
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(userProfile?.name || '');
+  const [currentLang, setCurrentLang] = useState(i18n.language.split('-')[0] || 'it');
 
   if (!userProfile) return null;
 
@@ -79,6 +96,12 @@ export default function Profile() {
 
   function handleSignChange(e: React.ChangeEvent<HTMLSelectElement>) {
     updateProfile({ zodiac_sign: e.target.value as ZodiacSign });
+  }
+
+  async function handleLanguageChange(code: string) {
+    setCurrentLang(code);
+    await i18n.changeLanguage(code);
+    updateProfile({ language: code });
   }
 
   const sortedCheckins = [...checkins].sort(
@@ -227,22 +250,64 @@ export default function Profile() {
       >
         <GlowCard className="p-5" animate={false}>
           <p className="text-[10px] font-label font-semibold tracking-[0.18em] uppercase text-[#a78bfa] mb-1">
-            STATISTICHE
+            {t('profile.statsLabel')}
           </p>
           <h3 className="font-display font-semibold text-white text-base mb-4">
             Le tue statistiche
           </h3>
           <div className="grid grid-cols-3 gap-3">
             {[
-              { label: 'Serie record', value: `${userProfile.record_streak}`, icon: '🔥', color: 'text-orange-400' },
-              { label: 'Gemme totali', value: `${userProfile.gems}`, icon: '◆', color: 'text-teal-400' },
-              { label: 'Serie attuale', value: `${userProfile.current_streak}`, icon: '🔥', color: 'text-mystic-gold' },
-            ].map(({ label, value, icon, color }) => (
+              { label: 'Serie record', value: `${userProfile.record_streak}`, icon: '🔥' },
+              { label: 'Gemme totali', value: `${userProfile.gems}`, icon: '◆' },
+              { label: 'Serie attuale', value: `${userProfile.current_streak}`, icon: '🔥' },
+            ].map(({ label, value, icon }) => (
               <div key={label} className="text-center bg-[#13112a] rounded-xl p-3 border border-[rgba(139,92,246,0.15)]">
                 <p className="font-display text-2xl text-[#d4a843]">{value} {icon}</p>
                 <p className="font-label text-[10px] text-[#9b93c4] mt-0.5">{label}</p>
               </div>
             ))}
+          </div>
+        </GlowCard>
+      </motion.div>
+
+      {/* Language selector */}
+      <motion.div
+        initial={shouldReduceMotion ? false : { opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.22 }}
+        className="mb-4"
+      >
+        <GlowCard className="p-5" animate={false}>
+          <p className="text-[10px] font-label font-semibold tracking-[0.18em] uppercase text-[#a78bfa] mb-1">
+            {t('profile.languageLabel')}
+          </p>
+          <h3 className="font-display font-semibold text-white text-base mb-4">
+            {t('profile.language')}
+          </h3>
+          <div className="grid grid-cols-4 gap-2">
+            {LANGUAGES.map(({ code, label, flag }) => {
+              const isSelected = currentLang === code;
+              return (
+                <button
+                  key={code}
+                  onClick={() => handleLanguageChange(code)}
+                  className="flex flex-col items-center gap-1 py-2.5 px-1 rounded-xl transition-all duration-200 text-center"
+                  style={{
+                    background: isSelected ? 'rgba(124,58,237,0.2)' : 'rgba(19,17,42,0.8)',
+                    border: isSelected ? '1px solid rgba(167,139,250,0.5)' : '1px solid rgba(139,92,246,0.1)',
+                    boxShadow: isSelected ? '0 0 12px rgba(124,58,237,0.2)' : 'none',
+                  }}
+                >
+                  <span className="text-lg leading-none">{flag}</span>
+                  <span
+                    className="font-label text-[8px] tracking-wide leading-tight"
+                    style={{ color: isSelected ? '#a78bfa' : '#4a4468' }}
+                  >
+                    {label}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </GlowCard>
       </motion.div>
@@ -335,7 +400,7 @@ export default function Profile() {
         </motion.div>
       )}
 
-      {/* Logout */}
+      {/* Sign out */}
       <motion.div
         initial={shouldReduceMotion ? false : { opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -345,9 +410,9 @@ export default function Profile() {
         <GlowCard className="p-4" animate={false}>
           <button
             className="w-full py-2.5 rounded-full border border-red-500/25 text-red-400/60 font-body text-sm font-medium hover:border-red-500/45 hover:text-red-400/80 transition-colors"
-            onClick={() => alert('Disconnessione (funzionalità disponibile con Supabase Auth)')}
+            onClick={() => signOut()}
           >
-            Disconnetti
+            {t('profile.signOut')}
           </button>
         </GlowCard>
       </motion.div>

@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import posthog from 'posthog-js';
 import App from './App';
 import './index.css';
+import '@/i18n';
 
 if (import.meta.env.VITE_POSTHOG_KEY) {
   posthog.init(import.meta.env.VITE_POSTHOG_KEY, {

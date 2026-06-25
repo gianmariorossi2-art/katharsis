@@ -118,3 +118,6 @@ $$ language plpgsql;
 create trigger on_profile_updated
   before update on public.profiles
   for each row execute procedure public.handle_updated_at();
+
+-- Add language preference to profiles
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS language text NOT NULL DEFAULT 'it';
