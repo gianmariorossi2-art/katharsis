@@ -24,14 +24,15 @@ export default function GemCounter({ count, animate = true }: GemCounterProps) {
 
   return (
     <motion.div
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gem-pink/10 border border-gem-pink/20"
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[rgba(212,168,67,0.25)]"
+      style={{ background: 'rgba(212,168,67,0.12)' }}
       animate={pop && !shouldReduceMotion ? { scale: [1, 1.2, 1] } : {}}
       transition={{ duration: 0.4, ease: 'easeOut' }}
     >
-      <span className="text-gem-pink text-base leading-none" aria-hidden="true">
+      <span className="text-[#d4a843] text-base leading-none" aria-hidden="true">
         ◆
       </span>
-      <span className="text-gem-pink font-semibold text-sm font-body">
+      <span className="text-[#d4a843] font-semibold text-sm font-body">
         {formatGems(count)}
       </span>
     </motion.div>

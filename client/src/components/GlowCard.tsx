@@ -12,12 +12,19 @@ interface GlowCardProps {
   animate?: boolean;
 }
 
-const GLOW_STYLES: Record<GlowColor, string> = {
-  purple: 'hover:shadow-[0_0_24px_rgba(124,58,237,0.5)]',
-  gold: 'hover:shadow-[0_0_24px_rgba(245,158,11,0.5)]',
-  cyan: 'hover:shadow-[0_0_24px_rgba(6,182,212,0.5)]',
-  gem: 'hover:shadow-[0_0_24px_rgba(224,64,251,0.5)]',
-  teal: 'hover:shadow-[0_0_24px_rgba(20,184,166,0.5)]',
+const GLOW_SHADOW: Record<GlowColor, string> = {
+  purple: '0 0 40px rgba(124,58,237,0.4)',
+  gold:   '0 0 30px rgba(212,168,67,0.3)',
+  cyan:   '0 0 24px rgba(6,182,212,0.4)',
+  gem:    '0 0 24px rgba(224,64,251,0.4)',
+  teal:   '0 0 30px rgba(45,212,191,0.25)',
+};
+
+const BASE_CARD_STYLE: React.CSSProperties = {
+  background: 'rgba(13,11,30,0.95)',
+  border: '1px solid rgba(139,92,246,0.15)',
+  boxShadow: '0 0 60px rgba(124,58,237,0.15), inset 0 1px 0 rgba(255,255,255,0.04)',
+  borderRadius: '20px',
 };
 
 export default function GlowCard({
@@ -30,7 +37,9 @@ export default function GlowCard({
   animate = true,
 }: GlowCardProps) {
   const shouldReduceMotion = useReducedMotion();
-  const glowClass = glowColor ? GLOW_STYLES[glowColor] : '';
+  const glowStyle: React.CSSProperties = glowColor
+    ? { ...BASE_CARD_STYLE, boxShadow: `${GLOW_SHADOW[glowColor]}, inset 0 1px 0 rgba(255,255,255,0.04)` }
+    : BASE_CARD_STYLE;
   const hasHero = !!heroSlot;
 
   if (hasHero) {
@@ -40,12 +49,12 @@ export default function GlowCard({
         <div className={className}>{children}</div>
       </>
     );
-    const outerClass = `glass-card rounded-2xl overflow-hidden transition-shadow duration-300 ${glowClass}`;
+    const outerClass = `overflow-hidden transition-shadow duration-300`;
 
     if (!animate || shouldReduceMotion) {
       return (
-        <div className={outerClass} onClick={onClick} role={onClick ? 'button' : undefined}
-          style={{ cursor: onClick ? 'pointer' : undefined }}>
+        <div className={outerClass} style={glowStyle} onClick={onClick} role={onClick ? 'button' : undefined}
+          >
           {inner}
         </div>
       );
@@ -56,9 +65,9 @@ export default function GlowCard({
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.3, ease: 'easeOut' }}
         className={outerClass}
+        style={glowStyle}
         onClick={onClick}
         role={onClick ? 'button' : undefined}
-        style={{ cursor: onClick ? 'pointer' : undefined }}
       >
         {inner}
       </motion.div>
@@ -66,10 +75,10 @@ export default function GlowCard({
   }
 
   // No hero — original behaviour
-  const baseClass = `glass-card rounded-2xl transition-shadow duration-300 ${glowClass} ${className}`;
+  const baseClass = `transition-shadow duration-300 ${className}`;
   const content = (
-    <div className={baseClass} onClick={onClick} role={onClick ? 'button' : undefined}
-      style={{ cursor: onClick ? 'pointer' : undefined }}>
+    <div className={baseClass} style={glowStyle} onClick={onClick} role={onClick ? 'button' : undefined}
+      >
       {children}
     </div>
   );
@@ -82,9 +91,9 @@ export default function GlowCard({
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
       className={baseClass}
+      style={glowStyle}
       onClick={onClick}
       role={onClick ? 'button' : undefined}
-      style={{ cursor: onClick ? 'pointer' : undefined }}
     >
       {children}
     </motion.div>

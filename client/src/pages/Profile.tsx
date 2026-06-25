@@ -43,8 +43,8 @@ function ProfileHeroVisual({ initial }: { initial: string }) {
       <div
         className="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold text-white font-display relative z-10"
         style={{
-          background: 'linear-gradient(135deg, #7c3aed 0%, #14b8a6 100%)',
-          boxShadow: '0 0 28px rgba(20,184,166,0.3), 0 0 56px rgba(124,58,237,0.15)',
+          background: 'linear-gradient(135deg, #7c3aed, #2dd4bf)',
+          boxShadow: '0 0 28px rgba(45,212,191,0.3), 0 0 56px rgba(124,58,237,0.15)',
         }}
       >
         {initial}
@@ -93,10 +93,10 @@ export default function Profile() {
         transition={{ duration: 0.4 }}
         className="mb-6"
       >
-        <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-teal-400 mb-1">
+        <p className="text-[10px] font-label font-semibold tracking-[0.18em] uppercase text-[#a78bfa] mb-1">
           KATHARSIS
         </p>
-        <h1 className="font-display font-bold text-white text-2xl">
+        <h1 className="font-display font-light text-[#f0eeff] text-2xl">
           Il tuo profilo
         </h1>
       </motion.div>
@@ -135,7 +135,7 @@ export default function Profile() {
             </div>
           ) : (
             <div className="flex items-center gap-2 mb-1">
-              <p className="font-display font-bold text-white text-xl truncate">
+              <p className="font-display font-light text-[#f0eeff] text-2xl truncate">
                 {userProfile.name}
               </p>
               <button
@@ -147,7 +147,7 @@ export default function Profile() {
               </button>
             </div>
           )}
-          <p className="text-white/45 font-body text-sm mb-4">
+          <p className="font-label text-xs tracking-wide text-[#9b93c4] mb-4">
             {userProfile.zodiac_sign} · Livello {levelInfo.level} — {levelInfo.title}
           </p>
 
@@ -176,7 +176,7 @@ export default function Profile() {
         className="mb-4"
       >
         <GlowCard glowColor="gold" className="p-5" animate={false}>
-          <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-teal-400 mb-1">
+          <p className="text-[10px] font-label font-semibold tracking-[0.18em] uppercase text-[#a78bfa] mb-1">
             PROGRESSIONE
           </p>
           <div className="flex items-center justify-between mb-3">
@@ -195,10 +195,10 @@ export default function Profile() {
             </span>
           </div>
 
-          <div className="h-1.5 bg-surface-2 rounded-full overflow-hidden mb-2">
+          <div className="h-1.5 bg-[#13112a] rounded-full overflow-hidden mb-2">
             <motion.div
               className="h-full rounded-full"
-              style={{ backgroundColor: levelInfo.color }}
+              style={{ background: 'linear-gradient(90deg, #7c3aed, #a78bfa)' }}
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
               transition={{ duration: 0.8, delay: 0.3, ease: 'easeOut' }}
@@ -226,7 +226,7 @@ export default function Profile() {
         className="mb-4"
       >
         <GlowCard className="p-5" animate={false}>
-          <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-teal-400 mb-1">
+          <p className="text-[10px] font-label font-semibold tracking-[0.18em] uppercase text-[#a78bfa] mb-1">
             STATISTICHE
           </p>
           <h3 className="font-display font-semibold text-white text-base mb-4">
@@ -238,9 +238,9 @@ export default function Profile() {
               { label: 'Gemme totali', value: `${userProfile.gems}`, icon: '◆', color: 'text-teal-400' },
               { label: 'Serie attuale', value: `${userProfile.current_streak}`, icon: '🔥', color: 'text-mystic-gold' },
             ].map(({ label, value, icon, color }) => (
-              <div key={label} className="text-center bg-surface-2/40 rounded-xl p-3 border border-white/5">
-                <p className={`font-body font-bold text-lg ${color}`}>{value} {icon}</p>
-                <p className="text-white/35 font-body text-[10px] mt-0.5">{label}</p>
+              <div key={label} className="text-center bg-[#13112a] rounded-xl p-3 border border-[rgba(139,92,246,0.15)]">
+                <p className="font-display text-2xl text-[#d4a843]">{value} {icon}</p>
+                <p className="font-label text-[10px] text-[#9b93c4] mt-0.5">{label}</p>
               </div>
             ))}
           </div>
@@ -264,8 +264,8 @@ export default function Profile() {
                 <span className="text-white text-lg">✦</span>
               </div>
               <div>
-                <p className="text-[10px] font-semibold tracking-[0.15em] uppercase text-teal-400 mb-0.5">PIANO</p>
-                <p className="font-display font-bold text-teal-400">Premium</p>
+                <p className="text-[10px] font-label font-semibold tracking-[0.15em] uppercase text-[#a78bfa] mb-0.5">PIANO</p>
+                <p className="font-display font-light text-[#a78bfa]">Premium</p>
                 <p className="text-white/45 font-body text-xs">Accesso illimitato all&apos;Oracolo</p>
               </div>
             </div>
@@ -274,8 +274,8 @@ export default function Profile() {
           <GlowCard className="p-5" animate={false}>
             <div className="flex items-center justify-between mb-3">
               <div>
-                <p className="text-[10px] font-semibold tracking-[0.15em] uppercase text-teal-400 mb-0.5">PIANO</p>
-                <p className="font-display font-semibold text-white">Gratuito</p>
+                <p className="text-[10px] font-label font-semibold tracking-[0.15em] uppercase text-[#a78bfa] mb-0.5">PIANO</p>
+                <p className="font-display font-light text-[#f0eeff]">Gratuito</p>
                 <p className="text-white/35 font-body text-xs mt-0.5">1 domanda all&apos;Oracolo al giorno</p>
               </div>
               <span className="text-white/25 font-body text-xs px-2 py-0.5 rounded-full border border-white/8">
@@ -301,7 +301,7 @@ export default function Profile() {
           className="mb-4"
         >
           <GlowCard className="p-5" animate={false}>
-            <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-teal-400 mb-1">
+            <p className="text-[10px] font-label font-semibold tracking-[0.18em] uppercase text-[#a78bfa] mb-1">
               ARCHIVIO
             </p>
             <h3 className="font-display font-semibold text-white text-base mb-4">

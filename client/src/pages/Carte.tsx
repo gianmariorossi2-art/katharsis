@@ -8,9 +8,11 @@ import { track } from '@/lib/analytics';
 function CardBack() {
   return (
     <div
-      className="w-full h-full rounded-2xl flex flex-col items-center justify-center border border-purple-500/30"
+      className="w-full h-full rounded-2xl flex flex-col items-center justify-center"
       style={{
-        background: 'linear-gradient(135deg, #0f0a2e 0%, #041f1e 100%)',
+        background: 'linear-gradient(135deg, #1a0a2e 0%, #0d1a2e 50%, #0a0820 100%)',
+        border: '1px solid rgba(212,168,67,0.3)',
+        boxShadow: '0 0 20px rgba(212,168,67,0.15), inset 0 0 40px rgba(124,58,237,0.05)',
         backfaceVisibility: 'hidden',
       }}
     >
@@ -21,10 +23,10 @@ function CardBack() {
       <div className="absolute w-0.5 h-0.5 rounded-full bg-purple-300/30 bottom-4 left-6" />
 
       {/* Border inside */}
-      <div className="absolute inset-2 rounded-xl border border-purple-500/15" />
+      <div className="absolute inset-2 rounded-xl border border-[rgba(212,168,67,0.15)]" />
 
       {/* Central symbol */}
-      <div className="text-3xl" style={{ filter: 'drop-shadow(0 0 10px rgba(124,58,237,0.5))' }}>
+      <div className="text-3xl text-[#d4a843]" style={{ filter: 'drop-shadow(0 0 8px rgba(212,168,67,0.6))' }}>
         ✦
       </div>
     </div>
@@ -187,10 +189,10 @@ export default function Carte() {
         transition={{ duration: 0.4 }}
         className="mb-6"
       >
-        <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-teal-400 mb-1">
+        <p className="text-[10px] font-label font-semibold tracking-[0.18em] uppercase text-[#a78bfa] mb-1">
           TAROT
         </p>
-        <h1 className="font-display font-bold text-white text-2xl mb-1">Carte</h1>
+        <h1 className="font-display font-light text-[#f0eeff] text-2xl mb-1">Carte</h1>
         <p className="text-white/40 font-body text-sm">
           La tua guida del giorno attraverso i Grandi Arcani
         </p>
@@ -212,7 +214,7 @@ export default function Carte() {
           className="p-5"
           animate={false}
         >
-          <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-teal-400 mb-1">
+          <p className="text-[10px] font-label font-semibold tracking-[0.18em] uppercase text-[#a78bfa] mb-1">
             CARTA DEL GIORNO
           </p>
 
@@ -227,7 +229,8 @@ export default function Carte() {
                 </p>
                 <button
                   onClick={() => { setFlipped(true); track('tarot_card_revealed', { card: dailyCard.name, sign }); }}
-                  className="w-full py-3 rounded-full bg-purple-600 hover:bg-purple-500 text-white font-semibold text-sm transition-all hover:shadow-[0_0_20px_rgba(124,58,237,0.4)] active:scale-95"
+                  className="w-full py-3 rounded-full text-white font-semibold text-sm transition-all hover:opacity-90 active:scale-95"
+                  style={{ background: 'linear-gradient(135deg, #7c3aed, #d4a843)' }}
                 >
                   Rivela la carta
                 </button>
@@ -265,10 +268,10 @@ export default function Carte() {
       >
         {!showSpread ? (
           <GlowCard className="p-5 text-center" animate={false}>
-            <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-teal-400 mb-1">
+            <p className="text-[10px] font-label font-semibold tracking-[0.18em] uppercase text-[#a78bfa] mb-1">
               SPREAD
             </p>
-            <h3 className="font-display font-bold text-white text-lg mb-1">
+            <h3 className="font-display font-light text-[#f0eeff] text-lg mb-1">
               Spread a 3 Carte
             </h3>
             <p className="text-white/45 font-body text-sm mb-4">
@@ -306,10 +309,10 @@ export default function Carte() {
             transition={{ duration: 0.4 }}
           >
             <GlowCard glowColor="teal" className="p-5" animate={false}>
-              <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-teal-400 mb-1">
+              <p className="text-[10px] font-label font-semibold tracking-[0.18em] uppercase text-[#a78bfa] mb-1">
                 SPREAD · TRE CARTE
               </p>
-              <h3 className="font-display font-bold text-white text-lg mb-4">
+              <h3 className="font-display font-light text-[#f0eeff] text-lg mb-4">
                 Il tuo percorso
               </h3>
 

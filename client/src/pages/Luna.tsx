@@ -79,10 +79,10 @@ export default function Luna() {
         transition={{ duration: 0.4 }}
         className="mb-6"
       >
-        <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-teal-400 mb-1">
+        <p className="text-[10px] font-label font-semibold tracking-[0.18em] uppercase text-[#a78bfa] mb-1">
           CICLI LUNARI
         </p>
-        <h1 className="font-display font-bold text-white text-2xl mb-1">Luna</h1>
+        <h1 className="font-display font-light text-[#f0eeff] text-2xl mb-1">Luna</h1>
         <p className="text-white/40 font-body text-sm">Il ritmo del cielo, giorno per giorno</p>
       </motion.div>
 
@@ -102,16 +102,16 @@ export default function Luna() {
           className="p-5"
           animate={false}
         >
-          <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-teal-400 mb-1">
+          <p className="text-[10px] font-label font-semibold tracking-[0.18em] uppercase text-[#a78bfa] mb-1">
             FASE DI OGGI
           </p>
-          <h2 className="font-display font-bold text-white text-xl mb-1">
+          <h2 className="font-display font-light text-[#f0eeff] text-2xl mb-1">
             {moonData.name}
           </h2>
           <div className="flex items-center gap-3 mb-3">
             <div className="flex-1 h-1.5 bg-surface-2 rounded-full overflow-hidden">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-purple-500 to-teal-400"
+                className="h-full rounded-full bg-gradient-to-r from-[#a78bfa] to-[#2dd4bf]"
                 style={{ width: `${moonData.illumination}%` }}
               />
             </div>
@@ -150,7 +150,7 @@ export default function Luna() {
               {moonData.isFavorable ? '✦' : '○'}
             </div>
             <div>
-              <p className="text-[10px] font-semibold tracking-[0.15em] uppercase text-teal-400 mb-0.5">
+              <p className="text-[10px] font-label font-semibold tracking-[0.15em] uppercase text-[#a78bfa] mb-0.5">
                 {sign} · Influenza lunare
               </p>
               <p className="text-white/65 font-body text-sm leading-relaxed">
@@ -177,10 +177,10 @@ export default function Luna() {
               ‹
             </button>
             <div className="text-center">
-              <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-teal-400 mb-0.5">
+              <p className="text-[10px] font-label font-semibold tracking-[0.18em] uppercase text-[#a78bfa] mb-0.5">
                 CALENDARIO
               </p>
-              <h3 className="font-display font-semibold text-white text-base">
+              <h3 className="font-display font-light text-[#f0eeff] text-base">
                 {MONTH_NAMES_IT[viewMonth]} {viewYear}
               </h3>
             </div>
@@ -226,6 +226,7 @@ export default function Luna() {
                     ? 'border border-teal-500/20 bg-teal-500/5'
                     : ''
                 }`}
+                style={day.isFavorable ? { boxShadow: '0 0 8px rgba(212,168,67,0.2)' } : undefined}
               >
                 <span className="text-sm leading-none">{day.emoji}</span>
                 <span

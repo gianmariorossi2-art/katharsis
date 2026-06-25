@@ -32,18 +32,18 @@ function ThinkingDots() {
 
 function OracleAvatar({ reducedMotion }: { reducedMotion: boolean }) {
   return (
-    <div className="relative w-11 h-11 flex-shrink-0">
+    <div className="relative w-12 h-12 flex-shrink-0">
       <div
-        className="w-full h-full rounded-full flex items-center justify-center"
+        className="w-full h-full rounded-full flex items-center justify-center relative"
         style={{
-          background: 'radial-gradient(circle at 35% 35%, #2dd4bf, #0d9488 70%, #042f2e)',
-          boxShadow: '0 0 16px rgba(20,184,166,0.45)',
+          background: 'radial-gradient(circle at 35% 35%, #a78bfa, #7c3aed, #2e0a70)',
+          animation: reducedMotion ? 'none' : 'planet-breathe 3s ease-in-out infinite',
         }}
       >
-        <div className="w-4 h-4 rounded-full bg-white/30 backdrop-blur-sm" />
+        <span className="absolute text-white/40 text-xs">✦</span>
       </div>
       <motion.div
-        className="absolute inset-0 rounded-full border border-teal-400/40"
+        className="absolute inset-0 rounded-full border border-[#a78bfa]/40"
         animate={reducedMotion ? {} : { scale: [1, 1.35, 1], opacity: [0.4, 0, 0.4] }}
         transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
       />
@@ -109,24 +109,25 @@ export default function Oracle() {
   return (
     <div className="flex flex-col h-screen pb-16">
       {/* Header */}
-      <div className="flex-shrink-0 px-4 pt-5 pb-4 border-b border-white/8">
+      <div className="flex-shrink-0 px-4 pt-5 pb-4 border-b border-[rgba(139,92,246,0.15)]">
         <div className="max-w-md mx-auto flex items-center gap-3">
           <OracleAvatar reducedMotion={!!shouldReduceMotion} />
           <div>
-            <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-teal-400 mb-0.5">
+            <p className="text-[10px] font-label font-semibold tracking-[0.18em] uppercase text-[#a78bfa] mb-0.5">
               KATHARSIS
             </p>
-            <h1 className="font-display font-bold text-white text-xl leading-tight">
+            <h1 className="font-display font-light text-[#f0eeff] text-2xl leading-tight">
               L&apos;Oracolo
             </h1>
+            <p className="font-label text-[9px] tracking-[0.2em] text-[#4a4468] uppercase">VOCE DELLE STELLE</p>
           </div>
         </div>
       </div>
 
       {/* Free limit banner */}
       {!isPremium && (
-        <div className="flex-shrink-0 px-4 py-2 bg-teal-500/8 border-b border-teal-500/15">
-          <p className="text-center text-white/50 font-body text-xs">
+        <div className="flex-shrink-0 px-4 py-2 bg-[rgba(124,58,237,0.06)] border-b border-[rgba(139,92,246,0.12)]">
+          <p className="text-center text-[#9b93c4] font-label text-xs">
             {hasReachedLimit
               ? 'Hai esaurito la tua domanda gratuita di oggi'
               : `${FREE_LIMIT - oracleMessagesCount} domanda gratuita rimanente oggi`}
@@ -147,21 +148,25 @@ export default function Oracle() {
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} gap-2`}
               >
                 {msg.role === 'oracle' && (
-                  <div className="w-7 h-7 flex-shrink-0 mt-1 rounded-full flex items-center justify-center"
+                  <div className="w-6 h-6 flex-shrink-0 mt-1 rounded-full flex items-center justify-center"
                     style={{
-                      background: 'radial-gradient(circle at 35% 35%, #2dd4bf, #0d9488)',
-                      boxShadow: '0 0 8px rgba(20,184,166,0.3)',
+                      background: 'radial-gradient(circle at 35% 35%, #a78bfa, #7c3aed)',
+                      boxShadow: '0 0 8px rgba(167,139,250,0.3)',
                     }}
                   >
-                    <div className="w-2.5 h-2.5 rounded-full bg-white/30" />
+                    <span className="text-white/50 text-[8px]">✦</span>
                   </div>
                 )}
                 <div
-                  className={`max-w-[80%] px-4 py-3 rounded-2xl font-body text-sm leading-relaxed ${
+                  className={`max-w-[80%] px-4 py-3 font-body text-sm leading-relaxed ${
                     msg.role === 'user'
-                      ? 'bg-teal-600/30 border border-teal-500/30 text-white rounded-tr-sm'
-                      : 'bg-surface-2 text-white/85 rounded-tl-sm border-l-2 border-teal-500/40'
+                      ? 'text-[#9b93c4]'
+                      : 'text-[#f0eeff] text-[15px]'
                   }`}
+                  style={msg.role === 'user'
+                    ? { background: 'rgba(19,17,42,0.8)', border: '1px solid rgba(139,92,246,0.2)', borderRadius: '16px 16px 0 16px' }
+                    : { background: 'rgba(124,58,237,0.08)', borderLeft: '3px solid #a78bfa', borderRadius: '0 16px 16px 0' }
+                  }
                 >
                   {msg.content}
                 </div>
@@ -176,12 +181,12 @@ export default function Oracle() {
                 exit={{ opacity: 0 }}
                 className="flex justify-start gap-2"
               >
-                <div className="w-7 h-7 flex-shrink-0 mt-1 rounded-full flex items-center justify-center"
-                  style={{ background: 'radial-gradient(circle at 35% 35%, #2dd4bf, #0d9488)' }}
+                <div className="w-6 h-6 flex-shrink-0 mt-1 rounded-full flex items-center justify-center"
+                  style={{ background: 'radial-gradient(circle at 35% 35%, #a78bfa, #7c3aed)' }}
                 >
-                  <div className="w-2.5 h-2.5 rounded-full bg-white/30" />
+                  <span className="text-white/50 text-[8px]">✦</span>
                 </div>
-                <div className="bg-surface-2 text-white/60 px-4 py-3 rounded-2xl rounded-tl-sm border-l-2 border-teal-500/40">
+                <div className="text-[#9b93c4] px-4 py-3" style={{ background: 'rgba(124,58,237,0.08)', borderLeft: '3px solid #a78bfa', borderRadius: '0 16px 16px 0' }}>
                   <ThinkingDots />
                 </div>
               </motion.div>
@@ -215,7 +220,8 @@ export default function Oracle() {
                   </p>
                   <button
                     onClick={() => track('oracle_premium_clicked')}
-                    className="w-full py-3 rounded-full bg-teal-500 hover:bg-teal-400 font-semibold text-white text-sm font-body mb-3 hover:shadow-[0_0_20px_rgba(20,184,166,0.4)] transition-all">
+                    className="w-full py-3 rounded-full font-semibold text-white text-sm font-body mb-3 hover:opacity-90 transition-all"
+                    style={{ background: 'linear-gradient(135deg, #7c3aed, #a78bfa)' }}>
                     Diventa Premium
                   </button>
                   <button
@@ -233,7 +239,7 @@ export default function Oracle() {
       </div>
 
       {/* Input bar */}
-      <div className="flex-shrink-0 px-4 py-3 border-t border-white/8 bg-surface/80 backdrop-blur-xl">
+      <div className="flex-shrink-0 px-4 py-3 border-t border-[rgba(139,92,246,0.15)]" style={{ background: 'rgba(13,11,30,0.9)', backdropFilter: 'blur(20px)' }}>
         <div className="max-w-md mx-auto flex gap-2">
           <input
             ref={inputRef}
@@ -243,12 +249,13 @@ export default function Oracle() {
             onKeyDown={handleKeyDown}
             placeholder={hasReachedLimit ? 'Domanda gratuita esaurita...' : 'Chiedi alle stelle...'}
             disabled={hasReachedLimit || isThinking}
-            className="flex-1 bg-surface-2 border border-white/8 rounded-full px-5 py-2.5 text-white text-sm font-body placeholder-white/25 focus:outline-none focus:border-teal-500/50 disabled:opacity-40 transition-colors"
+            className="flex-1 bg-[rgba(19,17,42,0.8)] border border-[rgba(139,92,246,0.15)] rounded-full px-5 py-2.5 text-[#f0eeff] text-sm font-body placeholder-[#4a4468] focus:outline-none focus:border-[#a78bfa] disabled:opacity-40 transition-colors italic"
           />
           <button
             onClick={handleSend}
             disabled={!inputValue.trim() || isThinking || hasReachedLimit}
-            className="w-10 h-10 rounded-full bg-teal-500 hover:bg-teal-400 flex items-center justify-center text-white flex-shrink-0 disabled:opacity-30 transition-all hover:shadow-[0_0_14px_rgba(20,184,166,0.4)] active:scale-95"
+            className="w-10 h-10 rounded-full flex items-center justify-center text-white flex-shrink-0 disabled:opacity-30 transition-all active:scale-95"
+            style={{ background: 'linear-gradient(135deg, #7c3aed, #a78bfa)' }}
             aria-label="Invia domanda"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

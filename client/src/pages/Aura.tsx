@@ -47,10 +47,10 @@ export default function Aura() {
         transition={{ duration: 0.4 }}
         className="mb-6"
       >
-        <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-teal-400 mb-1">
+        <p className="text-[10px] font-label font-semibold tracking-[0.18em] uppercase text-[#a78bfa] mb-1">
           ENERGIA
         </p>
-        <h1 className="font-display font-bold text-white text-2xl mb-1">
+        <h1 className="font-display font-light text-[#f0eeff] text-3xl mb-1">
           La Tua Aura
         </h1>
         <p className="text-white/40 font-body text-sm">
@@ -85,11 +85,11 @@ export default function Aura() {
           className="p-5 text-center"
           animate={false}
         >
-          <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-teal-400 mb-1">
+          <p className="text-[10px] font-label font-semibold tracking-[0.18em] uppercase text-[#a78bfa] mb-1">
             AURA ATTUALE
           </p>
           <h2
-            className="font-display font-bold text-2xl mb-2"
+            className="font-display font-light text-3xl mb-2"
             style={{ color: currentAura.color }}
           >
             {currentAura.label}
@@ -109,7 +109,7 @@ export default function Aura() {
           className="mb-4"
         >
           <GlowCard glowColor="purple" className="p-4" animate={false}>
-            <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-teal-400 mb-2">
+            <p className="text-[10px] font-label font-semibold tracking-[0.18em] uppercase text-[#a78bfa] mb-2">
               AGGIORNA
             </p>
             <p className="text-white/65 font-body text-sm mb-3">
@@ -120,7 +120,8 @@ export default function Aura() {
               <button
                 onClick={handleQuickCheckin}
                 disabled={isLoading}
-                className="mt-3 w-full py-2.5 rounded-full bg-teal-500 hover:bg-teal-400 text-white font-body text-sm font-semibold transition-all disabled:opacity-40 hover:shadow-[0_0_16px_rgba(20,184,166,0.4)]"
+                className="mt-3 w-full py-2.5 rounded-full text-white font-body text-sm font-semibold transition-all disabled:opacity-40 hover:opacity-90"
+              style={{ background: 'linear-gradient(135deg, #7c3aed, #2dd4bf)' }}
               >
                 {isLoading ? 'Aggiornamento aura...' : 'Aggiorna la tua aura'}
               </button>
@@ -164,7 +165,7 @@ export default function Aura() {
                       </div>
                     )}
                     <div
-                      className="w-8 h-8 rounded-full border-2 transition-transform hover:scale-110"
+                      className="w-10 h-10 rounded-full border-2 transition-transform hover:scale-110 cursor-pointer"
                       style={{
                         backgroundColor: aura ? `${aura.color}33` : '#ffffff11',
                         borderColor: aura ? aura.color : '#ffffff22',
@@ -189,7 +190,7 @@ export default function Aura() {
         transition={{ delay: 0.4 }}
       >
         <GlowCard className="p-4" animate={false}>
-          <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-teal-400 mb-2">
+          <p className="text-[10px] font-label font-semibold tracking-[0.18em] uppercase text-[#a78bfa] mb-2">
             COME FUNZIONA
           </p>
           <h3 className="font-display font-semibold text-white text-sm mb-2">

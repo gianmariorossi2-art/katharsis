@@ -62,12 +62,12 @@ function CosmicOrbHero({ reducedMotion }: { reducedMotion: boolean }) {
 
       {/* Central orb */}
       <motion.div
-        className="w-9 h-9 rounded-full"
+        className="w-16 h-16 rounded-full"
         style={{
           background: 'radial-gradient(circle at 35% 35%, #2dd4bf, #7c3aed 60%, #5b21b6)',
-          boxShadow: '0 0 20px rgba(45,212,191,0.35), 0 0 40px rgba(124,58,237,0.2)',
+          animation: reducedMotion ? 'none' : 'planet-breathe 3s ease-in-out infinite',
         }}
-        animate={reducedMotion ? {} : { scale: [1, 1.12, 1] }}
+        animate={reducedMotion ? {} : { scale: [1, 1.08, 1] }}
         transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
       />
 
@@ -132,13 +132,13 @@ export default function Home() {
         transition={{ duration: 0.4 }}
         className="mb-6"
       >
-        <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-teal-400 mb-1">
+        <p className="text-[10px] font-label font-semibold tracking-[0.18em] uppercase text-[#a78bfa] mb-1">
           KATHARSIS
         </p>
-        <h1 className="font-display text-2xl font-bold text-white mb-1">
+        <h1 className="font-display text-[2rem] font-light tracking-[0.02em] text-[#f0eeff] mb-1">
           {greeting}, {name}
         </h1>
-        <p className="text-white/40 font-body text-sm">
+        <p className="font-label text-[#d4a843] text-sm tracking-[0.15em]">
           {new Date().toLocaleDateString('it-IT', {
             weekday: 'long',
             day: 'numeric',
@@ -150,6 +150,7 @@ export default function Home() {
           {userProfile && <StreakBadge streak={userProfile.current_streak} />}
           {userProfile && <GemCounter count={userProfile.gems} />}
         </div>
+
       </motion.div>
 
       {/* Main content */}
@@ -170,10 +171,10 @@ export default function Home() {
                 className="p-5"
                 animate={false}
               >
-                <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-teal-400 mb-1">
+                <p className="text-[10px] font-label font-semibold tracking-[0.18em] uppercase text-[#a78bfa] mb-1">
                   CHECK-IN COSMICO
                 </p>
-                <h2 className="font-display font-semibold text-white text-xl mb-1">
+                <h2 className="font-display font-light text-[#f0eeff] text-2xl mb-1">
                   Come ti senti oggi?
                 </h2>
                 <p className="text-white/50 font-body text-sm mb-4">
@@ -190,7 +191,8 @@ export default function Home() {
                     <button
                       onClick={handleCheckin}
                       disabled={isCheckinLoading}
-                      className="w-full py-3 rounded-full bg-teal-500 hover:bg-teal-400 font-semibold text-white text-sm font-body transition-all duration-200 hover:shadow-[0_0_20px_rgba(20,184,166,0.4)] active:scale-95 disabled:opacity-50"
+                      className="w-full py-3 rounded-full font-semibold text-white text-sm font-body transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-50"
+                      style={{ background: 'linear-gradient(135deg, #7c3aed, #d4a843)' }}
                     >
                       {isCheckinLoading ? 'Le stelle si preparano...' : 'Rivela il tuo oroscopo'}
                     </button>

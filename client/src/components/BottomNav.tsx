@@ -85,8 +85,8 @@ export default function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 bg-surface/90 backdrop-blur-xl border-t border-white/8"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-[rgba(139,92,246,0.2)]"
+      style={{ background: 'rgba(7,6,15,0.88)', backdropFilter: 'blur(20px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
       <div className="flex items-center overflow-x-auto scrollbar-hide h-16 px-1">
         {tabs.map((tab) => {
@@ -96,7 +96,7 @@ export default function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
               className={`flex flex-col items-center gap-0.5 px-3 py-2 flex-shrink-0 relative transition-colors duration-200 font-body min-w-[60px] ${
-                isActive ? 'text-teal-400' : 'text-white/35 hover:text-white/60'
+                isActive ? 'text-[#a78bfa]' : 'text-[#4a4468] hover:text-[#9b93c4]'
               }`}
               aria-label={tab.label}
               aria-current={isActive ? 'page' : undefined}
@@ -110,7 +110,10 @@ export default function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
               </span>
               <span className="text-[9px] font-medium tracking-wide">{tab.label}</span>
               {isActive && (
-                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-teal-400" />
+                <div
+                  className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[#a78bfa]"
+                  style={{ boxShadow: '0 0 6px rgba(167,139,250,0.8)' }}
+                />
               )}
             </button>
           );

@@ -124,10 +124,10 @@ export default function Visioni() {
     <div className="min-h-screen pb-28 px-4 pt-6 font-body max-w-md mx-auto">
       {/* Header */}
       <div className="mb-6">
-        <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-teal-400 mb-1">
+        <p className="text-[10px] font-label font-semibold tracking-[0.18em] uppercase text-[#a78bfa] mb-1">
           LETTURA
         </p>
-        <h1 className="font-display text-2xl font-bold text-white mb-1">Visioni</h1>
+        <h1 className="font-display text-2xl font-light text-[#f0eeff] mb-1">Visioni</h1>
         <p className="text-white/40 text-sm">
           Carica una foto — le carte ti diranno cosa vedono
         </p>
@@ -158,7 +158,7 @@ export default function Visioni() {
               className="p-5"
               animate={false}
             >
-              <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-teal-400 mb-1">
+              <p className="text-[10px] font-label font-semibold tracking-[0.18em] uppercase text-[#a78bfa] mb-1">
                 VISIONI COSMICHE
               </p>
               <h2 className="font-display font-semibold text-white text-xl mb-2">
@@ -169,7 +169,8 @@ export default function Visioni() {
               </p>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full py-3 rounded-full bg-purple-600 hover:bg-purple-500 border border-purple-500/40 text-white font-semibold text-sm transition-all duration-200 hover:shadow-[0_0_20px_rgba(124,58,237,0.4)] active:scale-95"
+                className="w-full py-3 rounded-full text-white font-semibold text-sm transition-all duration-200 hover:opacity-90 active:scale-95"
+                style={{ background: 'linear-gradient(135deg, #7c3aed, #d4a843)' }}
               >
                 Scegli una foto
               </button>
@@ -200,7 +201,7 @@ export default function Visioni() {
             </div>
 
             <div className="text-center">
-              <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-teal-400 mb-1">
+              <p className="text-[10px] font-label font-semibold tracking-[0.18em] uppercase text-[#a78bfa] mb-1">
                 CHI È?
               </p>
               <h2 className="font-display text-xl text-white mb-1">Chi è questa persona?</h2>
@@ -229,9 +230,10 @@ export default function Visioni() {
               disabled={!relationship}
               className={`w-full py-4 rounded-full font-semibold text-base transition-all duration-300 ${
                 relationship
-                  ? 'bg-teal-500 hover:bg-teal-400 text-white hover:shadow-[0_0_20px_rgba(20,184,166,0.4)] active:scale-[0.98]'
-                  : 'bg-surface-2/50 text-white/30 cursor-not-allowed'
+                  ? 'text-white hover:opacity-90 active:scale-[0.98]'
+                  : 'text-white/30 cursor-not-allowed'
               }`}
+              style={relationship ? { background: 'linear-gradient(135deg, #2dd4bf, #7c3aed)' } : { background: 'rgba(19,17,42,0.5)' }}
             >
               {relationship ? 'Rivela la lettura' : 'Seleziona chi è'}
             </button>
@@ -323,7 +325,7 @@ export default function Visioni() {
                 <p className="text-white/80 leading-relaxed text-[15px]">{reading.core}</p>
               </div>
 
-              <div className="bg-purple-600/10 border border-purple-500/20 rounded-xl px-4 py-3">
+              <div className="bg-[rgba(212,168,67,0.05)] border border-[rgba(212,168,67,0.2)] rounded-xl px-4 py-3">
                 <div className="flex items-start gap-2">
                   <span className="text-base mt-0.5">⚠️</span>
                   <p className="text-white/65 text-sm leading-relaxed">{reading.warning}</p>
@@ -332,8 +334,8 @@ export default function Visioni() {
 
               <div className="pt-1">
                 <p
-                  className="font-display text-teal-400 text-center text-[15px] italic leading-relaxed"
-                  style={{ textShadow: '0 0 12px rgba(45,212,191,0.35)' }}
+                  className="font-display text-[#d4a843] text-center text-[15px] italic leading-relaxed"
+                  style={{ textShadow: '0 0 12px rgba(212,168,67,0.35)' }}
                 >
                   ✦ {reading.final} ✦
                 </p>
