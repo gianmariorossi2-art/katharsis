@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useApp } from '@/contexts/AppContext';
 import type { Mood } from '@/types';
+import { track } from '@/lib/analytics';
 import GemCounter, { GemToast } from '@/components/GemCounter';
 import StreakBadge from '@/components/StreakBadge';
 import MoodSelector from '@/components/MoodSelector';
@@ -97,6 +98,7 @@ export default function Home() {
     try {
       await addCheckin(selectedMood);
       setGemToast(GEM_REWARDS.AURA_CHECKIN);
+      track('checkin_completed', { mood: selectedMood, sign: userProfile?.zodiac_sign });
     } finally {
       setIsCheckinLoading(false);
     }
@@ -105,6 +107,7 @@ export default function Home() {
   function handleReveal() {
     revealHoroscope();
     setGemToast(GEM_REWARDS.DAILY_HOROSCOPE);
+    track('horoscope_revealed', { sign: userProfile?.zodiac_sign, mood: todayCheckin?.mood });
   }
 
   const energies =

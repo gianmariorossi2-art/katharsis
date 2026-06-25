@@ -6,6 +6,7 @@ import AuraOrb from '@/components/AuraOrb';
 import MoodSelector from '@/components/MoodSelector';
 import GlowCard from '@/components/GlowCard';
 import { calculateAuraFromMoods, getAuraHistory } from '@/lib/aura';
+import { track } from '@/lib/analytics';
 
 const DAY_LABELS = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
 
@@ -32,6 +33,7 @@ export default function Aura() {
     setIsLoading(true);
     try {
       await addCheckin(selectedMood);
+      track('aura_checkin_completed', { mood: selectedMood, aura: currentAura.label });
     } finally {
       setIsLoading(false);
     }

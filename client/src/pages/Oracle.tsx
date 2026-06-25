@@ -4,6 +4,7 @@ import { useApp } from '@/contexts/AppContext';
 import type { OracleMessage } from '@/types';
 import { getOracleResponse } from '@/lib/oracle';
 import GlowCard from '@/components/GlowCard';
+import { track } from '@/lib/analytics';
 
 const FREE_LIMIT = 1;
 
@@ -82,6 +83,7 @@ export default function Oracle() {
     setInputValue('');
     setIsThinking(true);
     addOracleMessage();
+    track('oracle_question_asked', { question_length: question.length, message_count: oracleMessagesCount + 1 });
 
     try {
       const response = await getOracleResponse(question);
@@ -211,7 +213,9 @@ export default function Oracle() {
                   <p className="text-white/50 font-body text-sm mb-4">
                     Con Premium hai accesso illimitato all&apos;Oracolo, letture avanzate e molto altro
                   </p>
-                  <button className="w-full py-3 rounded-full bg-teal-500 hover:bg-teal-400 font-semibold text-white text-sm font-body mb-3 hover:shadow-[0_0_20px_rgba(20,184,166,0.4)] transition-all">
+                  <button
+                    onClick={() => track('oracle_premium_clicked')}
+                    className="w-full py-3 rounded-full bg-teal-500 hover:bg-teal-400 font-semibold text-white text-sm font-body mb-3 hover:shadow-[0_0_20px_rgba(20,184,166,0.4)] transition-all">
                     Diventa Premium
                   </button>
                   <button

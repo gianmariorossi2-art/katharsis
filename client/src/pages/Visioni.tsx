@@ -7,6 +7,7 @@ import {
 } from '@/lib/visioni';
 import SparkleField from '@/components/SparkleField';
 import GlowCard from '@/components/GlowCard';
+import { track } from '@/lib/analytics';
 
 type Step = 'upload' | 'select' | 'reading' | 'reveal';
 
@@ -93,6 +94,7 @@ export default function Visioni() {
     reader.onload = (ev) => {
       setImagePreview(ev.target?.result as string);
       setStep('select');
+      track('visioni_photo_uploaded');
     };
     reader.readAsDataURL(file);
   }
@@ -105,6 +107,7 @@ export default function Visioni() {
     if (!shouldReduceMotion) setSparkleActive(true);
     setStep('reveal');
     setTimeout(() => setSparkleActive(false), 3000);
+    track('visioni_reading_revealed', { relationship });
   }
 
   function handleReset() {
@@ -342,6 +345,7 @@ export default function Visioni() {
                 onClick={async () => {
                   const text = `✦ Visione delle carte ✦\n\n${reading.core}\n\n⚠️ ${reading.warning}\n\n${reading.final}\n\n— Katharsis`;
                   await navigator.clipboard.writeText(text);
+                  track('visioni_reading_copied', { relationship });
                 }}
                 className="flex-1 py-3 rounded-full border border-white/10 text-white/50 text-sm hover:border-white/20 hover:text-white/70 transition-all"
               >

@@ -3,6 +3,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useApp } from '@/contexts/AppContext';
 import { getDailyCard, getThreeCardSpread, type TarotCard } from '@/lib/tarot';
 import GlowCard from '@/components/GlowCard';
+import { track } from '@/lib/analytics';
 
 function CardBack() {
   return (
@@ -225,7 +226,7 @@ export default function Carte() {
                   Tocca la carta per scoprire il messaggio di oggi
                 </p>
                 <button
-                  onClick={() => setFlipped(true)}
+                  onClick={() => { setFlipped(true); track('tarot_card_revealed', { card: dailyCard.name, sign }); }}
                   className="w-full py-3 rounded-full bg-purple-600 hover:bg-purple-500 text-white font-semibold text-sm transition-all hover:shadow-[0_0_20px_rgba(124,58,237,0.4)] active:scale-95"
                 >
                   Rivela la carta
@@ -275,7 +276,7 @@ export default function Carte() {
             </p>
             {isPremium || spreadUnlocked ? (
               <button
-                onClick={() => setShowSpread(true)}
+                onClick={() => { setShowSpread(true); track('tarot_spread_opened'); }}
                 className="w-full py-3 rounded-full bg-teal-500 hover:bg-teal-400 text-white font-semibold text-sm transition-all hover:shadow-[0_0_20px_rgba(20,184,166,0.4)] active:scale-95"
               >
                 Apri lo spread
@@ -283,14 +284,14 @@ export default function Carte() {
             ) : (
               <>
                 <button
-                  onClick={() => { setSpreadUnlocked(true); setShowSpread(true); }}
+                  onClick={() => { setSpreadUnlocked(true); setShowSpread(true); track('tarot_spread_unlocked', { method: 'premium_click' }); }}
                   className="w-full py-3 rounded-full text-white font-semibold text-sm mb-3 transition-all hover:shadow-[0_0_20px_rgba(20,184,166,0.3)]"
                   style={{ background: 'linear-gradient(135deg, #14b8a6 0%, #7c3aed 100%)' }}
                 >
                   Sblocca lo Spread — Premium
                 </button>
                 <button
-                  onClick={() => { setSpreadUnlocked(true); setShowSpread(true); }}
+                  onClick={() => { setSpreadUnlocked(true); setShowSpread(true); track('tarot_spread_unlocked', { method: 'free_trial' }); }}
                   className="text-white/30 font-body text-xs hover:text-white/50 transition-colors"
                 >
                   Prova gratis (1 volta)
