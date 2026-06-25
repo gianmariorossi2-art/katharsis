@@ -120,7 +120,7 @@ export default function HoroscopeRevealCard({
               </div>
             ) : undefined
           }
-          heroHeight="h-36"
+          heroHeight="h-48"
           className="p-5"
           animate={false}
         >
