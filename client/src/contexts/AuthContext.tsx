@@ -1,10 +1,19 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import type { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase';
+import type { User } from 'firebase/auth';
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
+  signOut as firebaseSignOut,
+  onAuthStateChanged,
+  updateProfile as firebaseUpdateProfile,
+} from 'firebase/auth';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { auth, db, FIREBASE_CONFIGURED } from '@/lib/firebase';
 
 interface AuthContextValue {
   user: User | null;
-  session: Session | null;
   loading: boolean;
   signUp: (email: string, password: string, name: string, zodiacSign: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
@@ -16,60 +25,85 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    if (!FIREBASE_CONFIGURED) {
+      setLoading(false);
+      return;
+    }
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setUser(u);
       setLoading(false);
     });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    return unsub;
   }, []);
 
   const signUp = async (email: string, password: string, name: string, zodiacSign: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { name, zodiac_sign: zodiacSign } },
-    });
-    if (!error) {
-      // Update profile with zodiac sign (trigger creates profile with name only)
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase.from('profiles').update({ zodiac_sign: zodiacSign, name }).eq('id', user.id);
-      }
+    try {
+      const { user: newUser } = await createUserWithEmailAndPassword(auth, email, password);
+      await firebaseUpdateProfile(newUser, { displayName: name });
+      // Create profile document in Firestore
+      await setDoc(doc(db, 'profiles', newUser.uid), {
+        name,
+        zodiac_sign: zodiacSign,
+        level: 1,
+        xp: 0,
+        gems: 0,
+        current_streak: 0,
+        record_streak: 0,
+        subscription_status: 'free',
+        language: 'it',
+        created_at: new Date().toISOString(),
+      });
+      return { error: null };
+    } catch (err) {
+      return { error: err as Error };
     }
-    return { error: error as Error | null };
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error as Error | null };
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      return { error: null };
+    } catch (err) {
+      return { error: err as Error };
+    }
   };
 
   const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin },
-    });
-    return { error: error as Error | null };
+    try {
+      const provider = new GoogleAuthProvider();
+      const { user: googleUser } = await signInWithPopup(auth, provider);
+      // Create profile if it doesn't exist yet
+      const profileRef = doc(db, 'profiles', googleUser.uid);
+      const snap = await getDoc(profileRef);
+      if (!snap.exists()) {
+        await setDoc(profileRef, {
+          name: googleUser.displayName || 'Viandante Cosmico',
+          zodiac_sign: 'Leone',
+          level: 1,
+          xp: 0,
+          gems: 0,
+          current_streak: 0,
+          record_streak: 0,
+          subscription_status: 'free',
+          language: 'it',
+          created_at: new Date().toISOString(),
+        });
+      }
+      return { error: null };
+    } catch (err) {
+      return { error: err as Error };
+    }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await firebaseSignOut(auth);
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signUp, signIn, signInWithGoogle, signOut }}>
       {children}
     </AuthContext.Provider>
   );

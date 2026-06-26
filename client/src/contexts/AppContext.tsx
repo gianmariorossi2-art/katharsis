@@ -2,17 +2,15 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import type { UserProfile, DailyCheckin, Mood } from '@/types';
 import { generateDailyHoroscope } from '@/lib/horoscope';
 import { GEM_REWARDS, getStreakMilestoneBonus, getLevelInfo } from '@/lib/gamification';
-import { supabase } from '@/lib/supabase';
+import {
+  doc, getDoc, setDoc, updateDoc, getDocs,
+  collection, query, where, orderBy, addDoc,
+} from 'firebase/firestore';
+import { db, FIREBASE_CONFIGURED } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 
 const todayStr = new Date().toISOString().split('T')[0];
 const today = new Date();
-
-// Check if Supabase is actually configured (not placeholder)
-const SUPABASE_CONFIGURED = !import.meta.env.VITE_SUPABASE_URL?.includes('placeholder') &&
-  !!import.meta.env.VITE_SUPABASE_URL;
-
-// ─── Mock fallback (used when not logged in or Supabase not configured) ─────────
 
 const MOCK_USER: UserProfile = {
   id: 'mock-user-id',
@@ -26,8 +24,6 @@ const MOCK_USER: UserProfile = {
   subscription_status: 'free',
   created_at: new Date().toISOString(),
 };
-
-// ─── Context types ──────────────────────────────────────────────────────────────
 
 interface AppContextValue {
   userProfile: UserProfile | null;
@@ -44,8 +40,6 @@ interface AppContextValue {
 
 const AppContext = createContext<AppContextValue | null>(null);
 
-// ─── Provider ───────────────────────────────────────────────────────────────────
-
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -54,9 +48,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [oracleMessagesCount, setOracleMessagesCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load data when user changes
   useEffect(() => {
-    if (!user || !SUPABASE_CONFIGURED) {
+    if (!user || !FIREBASE_CONFIGURED) {
       setUserProfile(MOCK_USER);
       setCheckins([]);
       setTodayCheckin(null);
@@ -69,40 +62,39 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       try {
         // Load profile
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user!.id)
-          .single();
-
-        if (profile) setUserProfile(profile as UserProfile);
-
-        // Load recent checkins (last 14 days)
-        const twoWeeksAgo = new Date();
-        twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-        const { data: checkinsData } = await supabase
-          .from('daily_checkins')
-          .select('*')
-          .eq('user_id', user!.id)
-          .gte('date', twoWeeksAgo.toISOString().split('T')[0])
-          .order('date', { ascending: true });
-
-        if (checkinsData) {
-          setCheckins(checkinsData as DailyCheckin[]);
-          const todayC = checkinsData.find(c => c.date === todayStr);
-          setTodayCheckin(todayC as DailyCheckin ?? null);
+        const profileSnap = await getDoc(doc(db, 'profiles', user!.uid));
+        if (profileSnap.exists()) {
+          setUserProfile({ id: user!.uid, ...profileSnap.data() } as UserProfile);
         }
 
-        // Load today's oracle message count
+        // Load checkins (last 14 days)
+        const twoWeeksAgo = new Date();
+        twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+        const twoWeeksAgoStr = twoWeeksAgo.toISOString().split('T')[0];
+
+        const checkinsSnap = await getDocs(
+          query(
+            collection(db, 'checkins'),
+            where('userId', '==', user!.uid),
+            where('date', '>=', twoWeeksAgoStr),
+            orderBy('date', 'asc'),
+          )
+        );
+        const loadedCheckins = checkinsSnap.docs.map(d => ({ id: d.id, ...d.data() } as DailyCheckin));
+        setCheckins(loadedCheckins);
+        setTodayCheckin(loadedCheckins.find(c => c.date === todayStr) ?? null);
+
+        // Count oracle messages today
         const todayStart = new Date();
         todayStart.setHours(0, 0, 0, 0);
-        const { count } = await supabase
-          .from('oracle_messages')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user!.id)
-          .gte('created_at', todayStart.toISOString());
-
-        setOracleMessagesCount(count ?? 0);
+        const oracleSnap = await getDocs(
+          query(
+            collection(db, 'oracle_messages'),
+            where('userId', '==', user!.uid),
+            where('createdAt', '>=', todayStart.toISOString()),
+          )
+        );
+        setOracleMessagesCount(oracleSnap.size);
       } finally {
         setIsLoading(false);
       }
@@ -116,14 +108,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (!prev) return prev;
       const updated = { ...prev, ...updates };
       if (updates.xp !== undefined) {
-        const levelInfo = getLevelInfo(updated.xp);
-        updated.level = levelInfo.level;
+        updated.level = getLevelInfo(updated.xp).level;
       }
       return updated;
     });
-
-    if (user && SUPABASE_CONFIGURED) {
-      await supabase.from('profiles').update(updates).eq('id', user.id);
+    if (user && FIREBASE_CONFIGURED) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { id: _id, ...rest } = updates as UserProfile;
+      await updateDoc(doc(db, 'profiles', user.uid), rest as Record<string, unknown>);
     }
   }, [user]);
 
@@ -132,25 +124,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (!prev) return prev;
       const newGems = prev.gems + amount;
       const newXp = prev.xp + amount;
-      const levelInfo = getLevelInfo(newXp);
-      const updated = { ...prev, gems: newGems, xp: newXp, level: levelInfo.level };
-      if (user && SUPABASE_CONFIGURED) {
-        supabase.from('profiles').update({ gems: newGems, xp: newXp, level: levelInfo.level }).eq('id', user.id);
+      const level = getLevelInfo(newXp).level;
+      const updated = { ...prev, gems: newGems, xp: newXp, level };
+      if (user && FIREBASE_CONFIGURED) {
+        updateDoc(doc(db, 'profiles', user.uid), { gems: newGems, xp: newXp, level });
       }
       return updated;
     });
   }, [user]);
 
   const addCheckin = useCallback(async (mood: Mood): Promise<DailyCheckin> => {
-    const horoscope = generateDailyHoroscope(
-      userProfile?.zodiac_sign || 'Leone',
-      mood,
-      today
-    );
+    const horoscope = generateDailyHoroscope(userProfile?.zodiac_sign || 'Leone', mood, today);
 
-    const newCheckin: DailyCheckin = {
-      id: `checkin-${Date.now()}`,
-      user_id: user?.id || 'mock-user-id',
+    const checkinData = {
+      userId: user?.uid || 'mock-user-id',
       date: todayStr,
       mood,
       horoscope_text: horoscope,
@@ -158,13 +145,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       created_at: new Date().toISOString(),
     };
 
-    if (user && SUPABASE_CONFIGURED) {
-      const { data } = await supabase
-        .from('daily_checkins')
-        .upsert({ user_id: user.id, date: todayStr, mood, horoscope_text: horoscope, opened: false })
-        .select()
-        .single();
-      if (data) newCheckin.id = (data as DailyCheckin).id;
+    const docId = `${user?.uid || 'mock'}_${todayStr}`;
+    const newCheckin: DailyCheckin = { id: docId, user_id: checkinData.userId, ...checkinData };
+
+    if (user && FIREBASE_CONFIGURED) {
+      await setDoc(doc(db, 'checkins', docId), checkinData, { merge: true });
     }
 
     setCheckins(prev => [...prev.filter(c => c.date !== todayStr), newCheckin]);
@@ -177,23 +162,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const milestoneBonus = getStreakMilestoneBonus(newStreak);
       const newGems = prev.gems + GEM_REWARDS.AURA_CHECKIN + milestoneBonus;
       const newXp = prev.xp + GEM_REWARDS.AURA_CHECKIN + milestoneBonus;
-      const levelInfo = getLevelInfo(newXp);
+      const level = getLevelInfo(newXp).level;
       const updated = {
         ...prev,
         current_streak: newStreak,
         record_streak: Math.max(prev.record_streak, newStreak),
         gems: newGems,
         xp: newXp,
-        level: levelInfo.level,
+        level,
       };
-      if (user && SUPABASE_CONFIGURED) {
-        supabase.from('profiles').update({
+      if (user && FIREBASE_CONFIGURED) {
+        updateDoc(doc(db, 'profiles', user.uid), {
           current_streak: updated.current_streak,
           record_streak: updated.record_streak,
           gems: updated.gems,
           xp: updated.xp,
           level: updated.level,
-        }).eq('id', user.id);
+        });
       }
       return updated;
     });
@@ -203,33 +188,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const revealHoroscope = useCallback(() => {
     if (!todayCheckin) return;
-
     setTodayCheckin(prev => prev ? { ...prev, opened: true } : prev);
     setCheckins(prev => prev.map(c => c.id === todayCheckin.id ? { ...c, opened: true } : c));
-
-    if (user && SUPABASE_CONFIGURED) {
-      supabase.from('daily_checkins').update({ opened: true }).eq('id', todayCheckin.id);
+    if (user && FIREBASE_CONFIGURED) {
+      const docId = `${user.uid}_${todayStr}`;
+      updateDoc(doc(db, 'checkins', docId), { opened: true });
     }
-
     addGems(GEM_REWARDS.DAILY_HOROSCOPE);
   }, [todayCheckin, user, addGems]);
 
   const addOracleMessage = useCallback(() => {
     setOracleMessagesCount(prev => prev + 1);
-  }, []);
+    if (user && FIREBASE_CONFIGURED) {
+      addDoc(collection(db, 'oracle_messages'), {
+        userId: user.uid,
+        createdAt: new Date().toISOString(),
+      });
+    }
+  }, [user]);
 
   return (
     <AppContext.Provider value={{
-      userProfile,
-      checkins,
-      todayCheckin,
-      oracleMessagesCount,
-      isLoading,
-      updateProfile,
-      addCheckin,
-      revealHoroscope,
-      addGems,
-      addOracleMessage,
+      userProfile, checkins, todayCheckin, oracleMessagesCount, isLoading,
+      updateProfile, addCheckin, revealHoroscope, addGems, addOracleMessage,
     }}>
       {children}
     </AppContext.Provider>

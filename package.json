@@ -2,9 +2,18 @@
   "name": "katharsis",
   "private": true,
   "version": "0.1.0",
-  "workspaces": ["client", "server"],
+  "workspaces": [
+    "client",
+    "server"
+  ],
   "scripts": {
     "build": "npm run build -w client && npm run build -w server",
     "start": "NODE_ENV=production node server/dist/index.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.106.0"
+  },
+  "devDependencies": {
+    "@vercel/node": "^5.8.21"
   }
 }
