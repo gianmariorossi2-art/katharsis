@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useApp } from '@/contexts/AppContext';
 import { getDailyCard, getThreeCardSpread, type TarotCard } from '@/lib/tarot';
+import { TAROT_ART } from '@/lib/tarotArt';
 import GlowCard from '@/components/GlowCard';
 import { track } from '@/lib/analytics';
 
-// --- Unique SVG motif per card — each one reflects the card's archetype ---
+// legacy motif — kept only for cards with no art entry (shouldn't happen)
 function CardMotif({ id, color, w, h }: { id: number; color: string; w: number; h: number }) {
   const c = color;
   const W = w;
@@ -331,41 +332,48 @@ function CardBack() {
 }
 
 function CardFront({ card }: { card: TarotCard }) {
+  const art = TAROT_ART[card.id];
   return (
     <div
-      className="w-full h-full rounded-2xl flex flex-col items-center justify-between p-3 overflow-hidden relative"
+      className="w-full h-full rounded-2xl overflow-hidden relative"
       style={{
-        background: `linear-gradient(160deg, ${card.color}60 0%, #0f0a2e 50%, #060311 100%)`,
-        border: `1.5px solid ${card.color}75`,
-        boxShadow: `0 0 20px ${card.color}30, inset 0 0 30px ${card.color}12`,
+        background: `linear-gradient(160deg, ${card.color}55 0%, #0c082a 45%, #060212 100%)`,
+        border: `1.5px solid ${card.color}80`,
+        boxShadow: `0 0 22px ${card.color}35, inset 0 0 30px ${card.color}12`,
         backfaceVisibility: 'hidden',
         transform: 'rotateY(180deg)',
       }}
     >
-      {/* Unique archetype motif */}
-      <CardMotif id={card.id} color={card.color} w={140} h={210} />
+      {/* Full illustration */}
+      {art && (
+        <svg viewBox="0 0 140 210" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'hidden' }}>
+          {art(card.color, 140, 210)}
+        </svg>
+      )}
 
-      {/* Numeral with side lines */}
-      <div className="flex items-center gap-1.5 w-full relative z-10">
-        <div className="flex-1 h-px" style={{ background: `linear-gradient(to right, transparent, ${card.color}55)` }} />
+      {/* Numeral — top overlay */}
+      <div className="absolute top-0 left-0 right-0 flex items-center gap-1.5 px-2.5 pt-2 z-10">
+        <div className="flex-1 h-px" style={{ background: `linear-gradient(to right, transparent, ${card.color}50)` }} />
         <p className="text-[8px] font-semibold tracking-[0.25em] uppercase" style={{ color: card.color }}>{card.numeral}</p>
-        <div className="flex-1 h-px" style={{ background: `linear-gradient(to left, transparent, ${card.color}55)` }} />
+        <div className="flex-1 h-px" style={{ background: `linear-gradient(to left, transparent, ${card.color}50)` }} />
       </div>
 
-      {/* Symbol with radial glow */}
-      <div className="relative flex items-center justify-center z-10">
-        <div className="absolute w-16 h-16 rounded-full" style={{ background: `radial-gradient(circle, ${card.color}45 0%, transparent 70%)` }} />
-        <div className="text-5xl relative z-10" style={{ filter: `drop-shadow(0 0 16px ${card.color})` }}>
-          {card.symbol}
+      {/* Central emoji with glow */}
+      <div className="absolute inset-0 flex items-center justify-center z-10">
+        <div className="relative">
+          <div className="absolute inset-0 rounded-full scale-[2.5]" style={{ background: `radial-gradient(circle, ${card.color}35 0%, transparent 70%)` }} />
+          <span className="text-5xl relative" style={{ filter: `drop-shadow(0 0 18px ${card.color}) drop-shadow(0 0 8px ${card.color})` }}>
+            {card.symbol}
+          </span>
         </div>
       </div>
 
-      {/* Name */}
-      <div className="text-center relative z-10">
-        <p className="font-display font-bold text-[11px] leading-tight mb-1" style={{ color: card.color }}>
+      {/* Name — bottom overlay */}
+      <div className="absolute bottom-0 left-0 right-0 px-2.5 pb-2.5 text-center z-10">
+        <div className="h-px w-10 mx-auto rounded-full mb-1.5" style={{ background: `${card.color}60` }} />
+        <p className="font-display font-bold text-[10px] leading-tight" style={{ color: card.color }}>
           {card.name}
         </p>
-        <div className="h-px w-8 mx-auto rounded-full" style={{ background: `${card.color}70` }} />
       </div>
     </div>
   );
@@ -412,36 +420,43 @@ function FlipCard({
 }
 
 function SmallCard({ card, label }: { card: TarotCard; label: string }) {
+  const art = TAROT_ART[card.id];
   return (
     <div className="flex flex-col items-center gap-2">
       <div
-        className="rounded-xl flex flex-col items-center justify-between p-2 overflow-hidden relative"
+        className="rounded-xl overflow-hidden relative"
         style={{
           width: '88px', height: '132px',
-          background: `linear-gradient(160deg, ${card.color}55 0%, #080614 100%)`,
-          border: `1.5px solid ${card.color}65`,
-          boxShadow: `0 0 12px ${card.color}28, inset 0 0 16px ${card.color}10`,
+          background: `linear-gradient(160deg, ${card.color}52 0%, #080614 100%)`,
+          border: `1.5px solid ${card.color}70`,
+          boxShadow: `0 0 14px ${card.color}30, inset 0 0 16px ${card.color}10`,
         }}
       >
-        {/* Scaled archetype motif */}
-        <CardMotif id={card.id} color={card.color} w={88} h={132} />
+        {/* Illustration */}
+        {art && (
+          <svg viewBox="0 0 88 132" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'hidden' }}>
+            {art(card.color, 88, 132)}
+          </svg>
+        )}
 
-        <div className="flex items-center gap-1 w-full relative z-10">
+        {/* Numeral */}
+        <div className="absolute top-0 left-0 right-0 flex items-center gap-1 px-1.5 pt-1.5 z-10">
           <div className="flex-1 h-px" style={{ background: `linear-gradient(to right, transparent, ${card.color}45)` }} />
-          <p className="text-[7px] font-semibold tracking-widest uppercase" style={{ color: card.color }}>{card.numeral}</p>
+          <p className="text-[6px] font-semibold tracking-widest uppercase" style={{ color: card.color }}>{card.numeral}</p>
           <div className="flex-1 h-px" style={{ background: `linear-gradient(to left, transparent, ${card.color}45)` }} />
         </div>
 
-        <div className="relative flex items-center justify-center z-10">
-          <div className="absolute w-10 h-10 rounded-full" style={{ background: `radial-gradient(circle, ${card.color}38 0%, transparent 70%)` }} />
-          <div className="text-2xl relative z-10" style={{ filter: `drop-shadow(0 0 10px ${card.color})` }}>
-            {card.symbol}
-          </div>
+        {/* Emoji */}
+        <div className="absolute inset-0 flex items-center justify-center z-10">
+          <span className="text-2xl" style={{ filter: `drop-shadow(0 0 10px ${card.color})` }}>{card.symbol}</span>
         </div>
 
-        <p className="font-display font-bold text-[8px] text-center leading-tight relative z-10" style={{ color: `${card.color}ee` }}>
-          {card.name}
-        </p>
+        {/* Name */}
+        <div className="absolute bottom-0 left-0 right-0 pb-1.5 text-center z-10">
+          <p className="font-display font-bold text-[7px] leading-tight px-1" style={{ color: `${card.color}ee` }}>
+            {card.name}
+          </p>
+        </div>
       </div>
       <p className="text-[9px] font-semibold tracking-[0.15em] uppercase text-white/35">{label}</p>
     </div>
