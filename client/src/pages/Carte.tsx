@@ -8,26 +8,40 @@ import { track } from '@/lib/analytics';
 function CardBack() {
   return (
     <div
-      className="w-full h-full rounded-2xl flex flex-col items-center justify-center"
+      className="w-full h-full rounded-2xl flex items-center justify-center overflow-hidden relative"
       style={{
-        background: 'linear-gradient(135deg, #1a0a2e 0%, #0d1a2e 50%, #0a0820 100%)',
-        border: '1px solid rgba(212,168,67,0.3)',
-        boxShadow: '0 0 20px rgba(212,168,67,0.15), inset 0 0 40px rgba(124,58,237,0.05)',
+        background: 'linear-gradient(135deg, #1e0d38 0%, #0d0d24 50%, #0a1828 100%)',
+        border: '1.5px solid rgba(212,168,67,0.45)',
+        boxShadow: '0 0 24px rgba(212,168,67,0.15), inset 0 0 40px rgba(124,58,237,0.08)',
         backfaceVisibility: 'hidden',
       }}
     >
-      {/* Star pattern */}
-      <div className="absolute w-0.5 h-0.5 rounded-full bg-white/30 top-3 left-4" />
-      <div className="absolute w-0.5 h-0.5 rounded-full bg-teal-300/30 bottom-3 right-4" />
-      <div className="absolute w-0.5 h-0.5 rounded-full bg-white/20 top-4 right-6" />
-      <div className="absolute w-0.5 h-0.5 rounded-full bg-purple-300/30 bottom-4 left-6" />
+      {/* Stars */}
+      <div className="absolute w-1 h-1 rounded-full bg-white/50 top-[12%] left-[18%]" />
+      <div className="absolute w-0.5 h-0.5 rounded-full bg-white/35 top-[8%] right-[22%]" />
+      <div className="absolute w-0.5 h-0.5 rounded-full bg-purple-300/40 top-[28%] right-[10%]" />
+      <div className="absolute w-1 h-1 rounded-full bg-teal-300/30 bottom-[14%] right-[18%]" />
+      <div className="absolute w-0.5 h-0.5 rounded-full bg-white/40 bottom-[10%] left-[22%]" />
+      <div className="absolute w-0.5 h-0.5 rounded-full bg-white/25 top-[45%] left-[8%]" />
+      <div className="absolute w-0.5 h-0.5 rounded-full bg-yellow-200/30 top-[38%] right-[8%]" />
 
-      {/* Border inside */}
-      <div className="absolute inset-2 rounded-xl border border-[rgba(212,168,67,0.15)]" />
+      {/* Concentric borders */}
+      <div className="absolute inset-2.5 rounded-xl border border-[rgba(212,168,67,0.22)]" />
+      <div className="absolute inset-[18px] rounded-lg border border-[rgba(212,168,67,0.12)]" />
 
-      {/* Central symbol */}
-      <div className="text-3xl text-[#d4a843]" style={{ filter: 'drop-shadow(0 0 8px rgba(212,168,67,0.6))' }}>
-        ✦
+      {/* Corner ornaments */}
+      <span className="absolute top-[14px] left-[14px] text-[7px] text-[#d4a843] opacity-60">✦</span>
+      <span className="absolute top-[14px] right-[14px] text-[7px] text-[#d4a843] opacity-60">✦</span>
+      <span className="absolute bottom-[14px] left-[14px] text-[7px] text-[#d4a843] opacity-60">✦</span>
+      <span className="absolute bottom-[14px] right-[14px] text-[7px] text-[#d4a843] opacity-60">✦</span>
+
+      {/* Central glow + symbol */}
+      <div className="relative flex flex-col items-center gap-1.5">
+        <div className="absolute w-20 h-20 rounded-full" style={{ background: 'radial-gradient(circle, rgba(212,168,67,0.2) 0%, transparent 70%)' }} />
+        <div className="text-3xl text-[#d4a843] relative" style={{ filter: 'drop-shadow(0 0 12px rgba(212,168,67,0.8))' }}>
+          ✦
+        </div>
+        <p className="text-[6px] tracking-[0.35em] text-[#d4a843] opacity-50 font-semibold uppercase relative">Katharsis</p>
       </div>
     </div>
   );
@@ -36,32 +50,42 @@ function CardBack() {
 function CardFront({ card }: { card: TarotCard }) {
   return (
     <div
-      className="w-full h-full rounded-2xl flex flex-col items-center justify-between p-3 border"
+      className="w-full h-full rounded-2xl flex flex-col items-center justify-between p-3 overflow-hidden"
       style={{
-        background: `linear-gradient(160deg, ${card.color}18 0%, #0a0820 50%, #080614 100%)`,
-        borderColor: `${card.color}40`,
+        background: `linear-gradient(160deg, ${card.color}60 0%, #0f0a2e 50%, #060311 100%)`,
+        border: `1.5px solid ${card.color}75`,
+        boxShadow: `0 0 20px ${card.color}30, inset 0 0 30px ${card.color}12`,
         backfaceVisibility: 'hidden',
         transform: 'rotateY(180deg)',
       }}
     >
-      <p
-        className="text-[9px] font-semibold tracking-[0.2em] uppercase text-center"
-        style={{ color: card.color }}
-      >
-        {card.numeral}
-      </p>
-      <div
-        className="text-4xl"
-        style={{ filter: `drop-shadow(0 0 14px ${card.color}88)` }}
-      >
-        {card.symbol}
+      {/* Numeral with side lines */}
+      <div className="flex items-center gap-1.5 w-full">
+        <div className="flex-1 h-px" style={{ background: `linear-gradient(to right, transparent, ${card.color}55)` }} />
+        <p className="text-[8px] font-semibold tracking-[0.25em] uppercase" style={{ color: card.color }}>
+          {card.numeral}
+        </p>
+        <div className="flex-1 h-px" style={{ background: `linear-gradient(to left, transparent, ${card.color}55)` }} />
       </div>
-      <p
-        className="font-display font-bold text-xs text-center leading-tight"
-        style={{ color: card.color }}
-      >
-        {card.name}
-      </p>
+
+      {/* Symbol with radial glow */}
+      <div className="relative flex items-center justify-center">
+        <div
+          className="absolute w-16 h-16 rounded-full"
+          style={{ background: `radial-gradient(circle, ${card.color}45 0%, transparent 70%)` }}
+        />
+        <div className="text-5xl relative z-10" style={{ filter: `drop-shadow(0 0 16px ${card.color})` }}>
+          {card.symbol}
+        </div>
+      </div>
+
+      {/* Name */}
+      <div className="text-center">
+        <p className="font-display font-bold text-[11px] leading-tight mb-1" style={{ color: card.color }}>
+          {card.name}
+        </p>
+        <div className="h-px w-8 mx-auto rounded-full" style={{ background: `${card.color}70` }} />
+      </div>
     </div>
   );
 }
@@ -117,20 +141,33 @@ function SmallCard({ card, label }: { card: TarotCard; label: string }) {
   return (
     <div className="flex flex-col items-center gap-2">
       <div
-        className="rounded-xl flex flex-col items-center justify-between p-2 border"
+        className="rounded-xl flex flex-col items-center justify-between p-2 overflow-hidden relative"
         style={{
           width: '88px', height: '132px',
-          background: `linear-gradient(160deg, ${card.color}15 0%, #080614 100%)`,
-          borderColor: `${card.color}35`,
+          background: `linear-gradient(160deg, ${card.color}55 0%, #080614 100%)`,
+          border: `1.5px solid ${card.color}65`,
+          boxShadow: `0 0 12px ${card.color}28, inset 0 0 16px ${card.color}10`,
         }}
       >
-        <p className="text-[8px] font-semibold tracking-widest uppercase" style={{ color: card.color }}>
-          {card.numeral}
-        </p>
-        <div className="text-2xl" style={{ filter: `drop-shadow(0 0 10px ${card.color}66)` }}>
-          {card.symbol}
+        {/* Numeral with lines */}
+        <div className="flex items-center gap-1 w-full">
+          <div className="flex-1 h-px" style={{ background: `linear-gradient(to right, transparent, ${card.color}45)` }} />
+          <p className="text-[7px] font-semibold tracking-widest uppercase" style={{ color: card.color }}>
+            {card.numeral}
+          </p>
+          <div className="flex-1 h-px" style={{ background: `linear-gradient(to left, transparent, ${card.color}45)` }} />
         </div>
-        <p className="font-display font-bold text-[9px] text-center leading-tight" style={{ color: card.color }}>
+
+        {/* Symbol with glow orb */}
+        <div className="relative flex items-center justify-center">
+          <div className="absolute w-10 h-10 rounded-full" style={{ background: `radial-gradient(circle, ${card.color}38 0%, transparent 70%)` }} />
+          <div className="text-2xl relative z-10" style={{ filter: `drop-shadow(0 0 10px ${card.color})` }}>
+            {card.symbol}
+          </div>
+        </div>
+
+        {/* Name */}
+        <p className="font-display font-bold text-[8px] text-center leading-tight" style={{ color: `${card.color}ee` }}>
           {card.name}
         </p>
       </div>
@@ -139,30 +176,28 @@ function SmallCard({ card, label }: { card: TarotCard; label: string }) {
   );
 }
 
-function CardHeroVisual({ card, flipped, reducedMotion }: { card: TarotCard; flipped: boolean; reducedMotion: boolean }) {
+function CardHeroVisual({ card, flipped, reducedMotion, onFlip }: { card: TarotCard; flipped: boolean; reducedMotion: boolean; onFlip: () => void }) {
   return (
     <div
       className="absolute inset-0 flex items-center justify-center"
-      style={{ background: 'linear-gradient(160deg, #0f0a2e 0%, #050312 100%)' }}
+      style={{ background: 'linear-gradient(160deg, #100a2e 0%, #050312 100%)' }}
     >
       {/* Stars */}
-      <div className="absolute w-0.5 h-0.5 rounded-full bg-white/40 top-4 left-8" />
-      <div className="absolute w-1 h-1 rounded-full bg-white/20 top-5 right-10" />
-      <div className="absolute w-0.5 h-0.5 rounded-full bg-purple-300/30 top-3 right-1/4" />
-      <div className="absolute w-0.5 h-0.5 rounded-full bg-white/25 bottom-4 left-16" />
+      <div className="absolute w-1 h-1 rounded-full bg-white/45 top-[15%] left-[12%]" />
+      <div className="absolute w-0.5 h-0.5 rounded-full bg-white/30 top-[10%] right-[18%]" />
+      <div className="absolute w-0.5 h-0.5 rounded-full bg-purple-300/40 top-[30%] right-[8%]" />
+      <div className="absolute w-1 h-1 rounded-full bg-teal-300/25 bottom-[18%] right-[12%]" />
+      <div className="absolute w-0.5 h-0.5 rounded-full bg-white/35 bottom-[12%] left-[16%]" />
 
-      {/* Glow when flipped */}
-      {flipped && (
-        <motion.div
-          className="absolute w-40 h-40 rounded-full"
-          style={{ background: `radial-gradient(circle, ${card.color}20 0%, transparent 70%)` }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-        />
-      )}
+      {/* Ambient glow — always present, stronger when flipped */}
+      <motion.div
+        className="absolute w-44 h-44 rounded-full"
+        style={{ background: `radial-gradient(circle, ${card.color}30 0%, transparent 70%)` }}
+        animate={{ opacity: flipped ? 1 : 0.35 }}
+        transition={{ duration: 0.5 }}
+      />
 
-      <FlipCard card={card} onFlip={() => {}} flipped={flipped} reducedMotion={reducedMotion} />
+      <FlipCard card={card} onFlip={onFlip} flipped={flipped} reducedMotion={reducedMotion} />
     </div>
   );
 }
@@ -208,7 +243,7 @@ export default function Carte() {
         <GlowCard
           glowColor="purple"
           heroSlot={
-            <CardHeroVisual card={dailyCard} flipped={flipped} reducedMotion={!!shouldReduceMotion} />
+            <CardHeroVisual card={dailyCard} flipped={flipped} reducedMotion={!!shouldReduceMotion} onFlip={() => { setFlipped(true); track('tarot_card_revealed', { card: dailyCard.name, sign }); }} />
           }
           heroHeight="h-56"
           className="p-5"

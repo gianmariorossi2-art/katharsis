@@ -61,40 +61,53 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     async function loadData() {
       setIsLoading(true);
       try {
-        // Load profile
-        const profileSnap = await getDoc(doc(db, 'profiles', user!.uid));
-        if (profileSnap.exists()) {
-          setUserProfile({ id: user!.uid, ...profileSnap.data() } as UserProfile);
+        // Load profile — fall back to mock if missing or denied
+        try {
+          const profileSnap = await getDoc(doc(db, 'profiles', user!.uid));
+          if (profileSnap.exists()) {
+            setUserProfile({ id: user!.uid, ...profileSnap.data() } as UserProfile);
+          } else {
+            setUserProfile({ ...MOCK_USER, id: user!.uid, name: user!.displayName || 'Viandante' });
+          }
+        } catch {
+          setUserProfile({ ...MOCK_USER, id: user!.uid, name: user!.displayName || 'Viandante' });
         }
 
-        // Load checkins (last 14 days)
-        const twoWeeksAgo = new Date();
-        twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-        const twoWeeksAgoStr = twoWeeksAgo.toISOString().split('T')[0];
+        // Load checkins — fail silently
+        try {
+          const twoWeeksAgo = new Date();
+          twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+          const twoWeeksAgoStr = twoWeeksAgo.toISOString().split('T')[0];
+          const checkinsSnap = await getDocs(
+            query(
+              collection(db, 'checkins'),
+              where('userId', '==', user!.uid),
+              where('date', '>=', twoWeeksAgoStr),
+              orderBy('date', 'asc'),
+            )
+          );
+          const loadedCheckins = checkinsSnap.docs.map(d => ({ id: d.id, ...d.data() } as DailyCheckin));
+          setCheckins(loadedCheckins);
+          setTodayCheckin(loadedCheckins.find(c => c.date === todayStr) ?? null);
+        } catch {
+          // Firestore rules not set up yet — checkins start empty
+        }
 
-        const checkinsSnap = await getDocs(
-          query(
-            collection(db, 'checkins'),
-            where('userId', '==', user!.uid),
-            where('date', '>=', twoWeeksAgoStr),
-            orderBy('date', 'asc'),
-          )
-        );
-        const loadedCheckins = checkinsSnap.docs.map(d => ({ id: d.id, ...d.data() } as DailyCheckin));
-        setCheckins(loadedCheckins);
-        setTodayCheckin(loadedCheckins.find(c => c.date === todayStr) ?? null);
-
-        // Count oracle messages today
-        const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0);
-        const oracleSnap = await getDocs(
-          query(
-            collection(db, 'oracle_messages'),
-            where('userId', '==', user!.uid),
-            where('createdAt', '>=', todayStart.toISOString()),
-          )
-        );
-        setOracleMessagesCount(oracleSnap.size);
+        // Count oracle messages — fail silently
+        try {
+          const todayStart = new Date();
+          todayStart.setHours(0, 0, 0, 0);
+          const oracleSnap = await getDocs(
+            query(
+              collection(db, 'oracle_messages'),
+              where('userId', '==', user!.uid),
+              where('createdAt', '>=', todayStart.toISOString()),
+            )
+          );
+          setOracleMessagesCount(oracleSnap.size);
+        } catch {
+          // ignore
+        }
       } finally {
         setIsLoading(false);
       }
@@ -107,15 +120,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setUserProfile(prev => {
       if (!prev) return prev;
       const updated = { ...prev, ...updates };
-      if (updates.xp !== undefined) {
-        updated.level = getLevelInfo(updated.xp).level;
-      }
+      if (updates.xp !== undefined) updated.level = getLevelInfo(updated.xp).level;
       return updated;
     });
     if (user && FIREBASE_CONFIGURED) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { id: _id, ...rest } = updates as UserProfile;
-      await updateDoc(doc(db, 'profiles', user.uid), rest as Record<string, unknown>);
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { id: _id, ...rest } = updates as UserProfile;
+        await updateDoc(doc(db, 'profiles', user.uid), rest as Record<string, unknown>);
+      } catch { /* ignore */ }
     }
   }, [user]);
 
@@ -127,7 +140,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const level = getLevelInfo(newXp).level;
       const updated = { ...prev, gems: newGems, xp: newXp, level };
       if (user && FIREBASE_CONFIGURED) {
-        updateDoc(doc(db, 'profiles', user.uid), { gems: newGems, xp: newXp, level });
+        updateDoc(doc(db, 'profiles', user.uid), { gems: newGems, xp: newXp, level }).catch(() => {});
       }
       return updated;
     });
@@ -135,7 +148,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const addCheckin = useCallback(async (mood: Mood): Promise<DailyCheckin> => {
     const horoscope = generateDailyHoroscope(userProfile?.zodiac_sign || 'Leone', mood, today);
-
     const checkinData = {
       userId: user?.uid || 'mock-user-id',
       date: todayStr,
@@ -144,18 +156,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       opened: false,
       created_at: new Date().toISOString(),
     };
-
     const docId = `${user?.uid || 'mock'}_${todayStr}`;
     const newCheckin: DailyCheckin = { id: docId, user_id: checkinData.userId, ...checkinData };
 
-    if (user && FIREBASE_CONFIGURED) {
-      await setDoc(doc(db, 'checkins', docId), checkinData, { merge: true });
-    }
-
+    // Always update local state first — Firestore is best-effort
     setCheckins(prev => [...prev.filter(c => c.date !== todayStr), newCheckin]);
     setTodayCheckin(newCheckin);
 
-    // Update streak + gems
+    if (user && FIREBASE_CONFIGURED) {
+      try {
+        await setDoc(doc(db, 'checkins', docId), checkinData, { merge: true });
+      } catch { /* Firestore rules not set up yet — data lives in memory */ }
+    }
+
     setUserProfile(prev => {
       if (!prev) return prev;
       const newStreak = prev.current_streak + 1;
@@ -167,18 +180,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         ...prev,
         current_streak: newStreak,
         record_streak: Math.max(prev.record_streak, newStreak),
-        gems: newGems,
-        xp: newXp,
-        level,
+        gems: newGems, xp: newXp, level,
       };
       if (user && FIREBASE_CONFIGURED) {
         updateDoc(doc(db, 'profiles', user.uid), {
           current_streak: updated.current_streak,
           record_streak: updated.record_streak,
-          gems: updated.gems,
-          xp: updated.xp,
-          level: updated.level,
-        });
+          gems: updated.gems, xp: updated.xp, level: updated.level,
+        }).catch(() => {});
       }
       return updated;
     });
@@ -191,8 +200,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setTodayCheckin(prev => prev ? { ...prev, opened: true } : prev);
     setCheckins(prev => prev.map(c => c.id === todayCheckin.id ? { ...c, opened: true } : c));
     if (user && FIREBASE_CONFIGURED) {
-      const docId = `${user.uid}_${todayStr}`;
-      updateDoc(doc(db, 'checkins', docId), { opened: true });
+      updateDoc(doc(db, 'checkins', `${user.uid}_${todayStr}`), { opened: true }).catch(() => {});
     }
     addGems(GEM_REWARDS.DAILY_HOROSCOPE);
   }, [todayCheckin, user, addGems]);
@@ -203,7 +211,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       addDoc(collection(db, 'oracle_messages'), {
         userId: user.uid,
         createdAt: new Date().toISOString(),
-      });
+      }).catch(() => {});
     }
   }, [user]);
 
