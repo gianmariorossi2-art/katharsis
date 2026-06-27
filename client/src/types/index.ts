@@ -58,6 +58,7 @@ export interface DailyReading {
     punto_natale: string;
     orbe: string;
     casa_coinvolta: number;
+    messaggio: string;
   };
   oroscopo_giorno: string;
   arcano_maggiore: {

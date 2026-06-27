@@ -80,9 +80,31 @@ REGOLE OBBLIGATORIE:
 - Mai usare: "segui il tuo cuore", "l'universo ti supporta", "andrà tutto bene"
 - Ogni lettura deve essere distinguibile: cita posizioni planetarie natali specifiche
 - Mantra: mai generico, deve riflettere il transito del giorno per QUESTA persona
+- transito_principale.messaggio: frase in italiano semplice per l'utente medio, max 12 parole, senza gergo astrologico. Esempio: "Saturno porta chiarezza e struttura nella tua carriera oggi."
 - JSON valido senza testo aggiuntivo prima o dopo, senza backtick, senza markdown
 
-Rispondi SOLO con il JSON strutturato specificato.`;
+OUTPUT JSON (struttura esatta):
+{
+  "data": "YYYY-MM-DD",
+  "nome_utente": "string",
+  "transito_principale": {
+    "pianeta_transitante": "string",
+    "aspetto": "trigono|quadratura|opposizione|congiunzione|sestile",
+    "punto_natale": "string",
+    "orbe": "X°XX'",
+    "casa_coinvolta": 0,
+    "messaggio": "Frase semplice per l'utente medio, max 12 parole"
+  },
+  "oroscopo_giorno": "150-200 parole, seconda persona",
+  "arcano_maggiore": { "numero": "I-XXI", "nome": "string", "significato_oggi": "2-3 frasi" },
+  "arcano_minore": { "seme": "Bastoni|Coppe|Spade|Denari", "numero": "string", "nome": "string", "significato_oggi": "1-2 frasi" },
+  "mantra_giorno": "max 12 parole, prima persona, presente",
+  "focus_aree": ["area1", "area2"],
+  "energia_giorno": "espansiva|contratta|neutrale|creativa",
+  "colore_giorno": "#hexcode",
+  "nota_tecnica": "string opzionale",
+  "gemini_prompt": "80-120 parole in inglese per Imagen"
+}`;
 
 // ─── Build user message ───────────────────────────────────────────────────────
 
@@ -141,6 +163,7 @@ function mockReading(nome: string, dateStr: string, zodiacSign: string): object 
       punto_natale: `Sole natale in ${zodiacSign}`,
       orbe: '2°30\'',
       casa_coinvolta: 10,
+      messaggio: 'Saturno porta chiarezza e struttura nella tua carriera oggi.',
     },
     oroscopo_giorno: `Oggi il cielo parla direttamente al tuo tema natale in ${zodiacSign}. Saturno, pianeta della struttura e della maturazione, forma un aspetto significativo che richiede la tua attenzione non come ostacolo, ma come invito a costruire qualcosa di solido. L'energia del momento è densa ma fertile: quello che costruisci oggi ha la consistenza della pietra. La tua luna natale percepisce questa pressione prima ancora che la mente la elabori — fidati di quella sensazione corporea che arriva prima delle parole. Non è tempo di volare, è tempo di radicarsi.`,
     arcano_maggiore: {

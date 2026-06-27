@@ -263,24 +263,23 @@ function ReadingCard({ reading }: { reading: DailyReading }) {
       {/* Transito principale */}
       {reading.transito_principale && (
         <div
-          className="rounded-xl px-4 py-3 font-body text-sm"
+          className="rounded-xl px-4 py-3"
           style={{
             background: 'rgba(201,168,76,0.04)',
             border: '1px solid rgba(201,168,76,0.15)',
           }}
         >
-          <span style={{ color: '#d4a843', fontWeight: 500 }}>
-            {reading.transito_principale.pianeta_transitante}
-          </span>
-          <span className="text-[#6b6491]">
-            {' '}in {reading.transito_principale.aspetto} a{' '}
-          </span>
-          <span style={{ color: '#d4a843', fontWeight: 500 }}>
-            {reading.transito_principale.punto_natale}
-          </span>
-          <span className="text-[#4a4468]">
-            {' '}— orbe {reading.transito_principale.orbe} · casa {reading.transito_principale.casa_coinvolta}
-          </span>
+          <p className="font-label text-[8px] tracking-[0.2em] text-[#4a4468] uppercase mb-1">Influsso del giorno</p>
+          {reading.transito_principale.messaggio && (
+            <p className="font-body text-[#c4bde8] text-sm mb-2">
+              {reading.transito_principale.messaggio}
+            </p>
+          )}
+          <p className="font-body text-[#4a4468] text-[11px]">
+            {reading.transito_principale.pianeta_transitante} in {reading.transito_principale.aspetto}
+            {' · '}casa {reading.transito_principale.casa_coinvolta}
+            {' · '}orbe {reading.transito_principale.orbe}
+          </p>
         </div>
       )}
 
