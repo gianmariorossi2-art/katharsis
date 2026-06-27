@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type React from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useApp } from '@/contexts/AppContext';
 import { getDailyCard, getThreeCardSpread, type TarotCard } from '@/lib/tarot';
@@ -306,7 +307,6 @@ function CardBack() {
         background: 'linear-gradient(135deg, #1e0d38 0%, #0d0d24 50%, #0a1828 100%)',
         border: '1.5px solid rgba(212,168,67,0.45)',
         boxShadow: '0 0 24px rgba(212,168,67,0.15), inset 0 0 40px rgba(124,58,237,0.08)',
-        backfaceVisibility: 'hidden',
       }}
     >
       <div className="absolute w-1 h-1 rounded-full bg-white/50 top-[12%] left-[18%]" />
@@ -340,8 +340,6 @@ function CardFront({ card }: { card: TarotCard }) {
         background: `linear-gradient(160deg, ${card.color}55 0%, #0c082a 45%, #060212 100%)`,
         border: `1.5px solid ${card.color}80`,
         boxShadow: `0 0 22px ${card.color}35, inset 0 0 30px ${card.color}12`,
-        backfaceVisibility: 'hidden',
-        transform: 'rotateY(180deg)',
       }}
     >
       {/* Full illustration */}
@@ -402,8 +400,12 @@ function FlipCard({
         animate={{ rotateY: flipped ? 180 : 0 }}
         transition={{ duration: reducedMotion ? 0 : 0.65, ease: 'easeInOut' }}
       >
-        <div className="absolute inset-0"><CardBack /></div>
-        <div className="absolute inset-0"><CardFront card={card} /></div>
+        <div className="absolute inset-0" style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' } as React.CSSProperties}>
+          <CardBack />
+        </div>
+        <div className="absolute inset-0" style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)' } as React.CSSProperties}>
+          <CardFront card={card} />
+        </div>
       </motion.div>
 
       {!flipped && (
