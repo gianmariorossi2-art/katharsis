@@ -137,8 +137,9 @@ async function generateImage(prompt: string): Promise<string | null> {
 
   // Modelli che supportano responseModalities IMAGE via API key standard
   const MODELS = [
-    'gemini-2.0-flash-preview-image-generation',
     'gemini-2.0-flash-exp',
+    'gemini-2.0-flash',
+    'gemini-2.0-flash-001',
   ];
 
   for (const model of MODELS) {
