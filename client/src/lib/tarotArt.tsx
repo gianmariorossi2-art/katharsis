@@ -576,7 +576,7 @@ export const TAROT_ART: Record<number, IllFn> = {
       <line x1={W/2} y1={H*0.22} x2={W*0.62} y2={H*0.38} stroke={c} strokeWidth={2.5} opacity={0.5} />
       <path d={`M${W*0.6},${H*0.36} L${W*0.72},${H*0.32} L${W*0.72},${H*0.44} L${W*0.6},${H*0.4} Z`} fill={c} opacity={0.35} />
       {/* Sound waves */}
-      {[H*0.08,H*0.14,H*0.2].map((offset,i)=>(
+      {[H*0.08,H*0.14,H*0.2].map((_offset,i)=>(
         <path key={i} d={`M${W*0.66},${H*0.36-i*5} Q${W*0.8},${H*0.3-i*5} ${W*0.94},${H*0.36-i*5}`} stroke={c} strokeWidth={0.8} fill="none" opacity={0.3-i*0.05} />
       ))}
       {/* Banner from trumpet */}

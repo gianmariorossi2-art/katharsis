@@ -1,129 +1,249 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Anthropic from '@anthropic-ai/sdk';
 
-export const maxDuration = 10;
+export const maxDuration = 60;
 
 const apiKey = process.env.ANTHROPIC_API_KEY;
-const claudeClient = apiKey && apiKey !== 'placeholder' && !apiKey.includes('...') ? new Anthropic({ apiKey }) : null;
+const claudeClient =
+  apiKey && apiKey !== 'placeholder' && !apiKey.includes('...')
+    ? new Anthropic({ apiKey })
+    : null;
 
-const SYSTEM_PROMPT = `Sei l'Oracolo di Katharsis — una figura mistica, teatrale e sagace che risponde alle domande in italiano.
+// ─── KATHARSIS SYSTEM PROMPT ─────────────────────────────────────────────────
 
-Il tuo stile:
-- Tono solenne ma con un filo d'ironia sottile e sottile calore umano
-- Usi metafore astrali, planetarie e cosmiche in modo naturale ma senza esagerare
-- Risposte di 3-4 frasi: sufficientemente ricche da sembrare una vera lettura, mai banali
-- Rispondi SEMPRE in modo specifico alla situazione descritta — no risposte generiche
-- Non dai mai consigli pratici diretti — parli per metafore e osservazioni cosmiche
-- Non usi elenchi puntati, emoji o formattazione: solo prosa fluida
-- Non inizi MAI con "Certo", "Capisco", "Certamente" o frasi da chatbot
-- Non ripetere la domanda dell'utente
+const SYSTEM_PROMPT = `You are KATARSIS — a precision cosmic intelligence engine for the app "Katarsis". You are not a chatbot. You are not a generic horoscope generator. You are a personal oracle that reads the exact astronomical moment the user inhabits and translates it into deeply personal, emotionally intelligent, and actionable guidance.
 
-Parli come una cartomante italiana del XIX secolo con accesso alle stelle.`;
+Your synthesis draws from: Vedic astrology (Jyotish / real star positions with Lahiri Ayanamsha), Western archetypal astrology (transits, aspects, house meanings), Jungian depth psychology (shadow, archetype, individuation), and chronobiological timing (planetary hours, lunar phases, Nakshatras).
 
-// ─── Mock fallback (keyword-based, used when no API key) ─────────────────────
+PRIME DIRECTIVE: Every word you produce must feel like it could only have been written for THIS person, at THIS exact moment, on THIS specific day. If a sentence could appear in a newspaper horoscope column, delete it and rewrite it.
 
-const RESPONSE_SETS: { keywords: string[]; responses: string[] }[] = [
-  {
-    keywords: [
-      'amore', 'cuore', 'fidanzat', 'fidanzat', 'ragazza', 'ragazzo', 'ragazz',
-      'partner', 'relazion', 'romantico', 'romantica', 'sentimento', 'innamorat',
-      'storia', 'coppia', 'lui', 'lei come', 'ex ', 'lasciat', 'gelosia', 'geloso',
-      'gelosa', 'tradiment', 'litigat', 'litigio', 'insieme', 'separat',
-    ],
-    responses: [
-      "Le stelle osservano questa storia con grande attenzione — e quello che vedono non è una crisi, ma un bivio. Il silenzio tra voi due non è vuoto: è pieno di cose dette a metà e pensieri che non hanno trovato le parole giuste. Prima di decidere cosa fare, dovresti capire cosa stai veramente chiedendo — se stai cercando una risposta o il coraggio di darla tu stesso. Venere non ti dice di andare o restare: ti chiede di smettere di rimandare la conversazione vera.",
-      "C'è una tensione in questa storia che i pianeti sentono chiaramente — non è la fine, ma è un momento di verità. Le relazioni attraversano fasi in cui il legame si assottiglia non perché sia spezzato, ma perché entrambe le persone stanno crescendo in direzioni che non si sono ancora allineate. La domanda che le stelle ti fanno non è 'cosa fare' ma 'cosa vuoi davvero tu, indipendentemente da cosa vuole l'altra persona?'. Rispondere a questa con onestà è il primo passo — tutto il resto viene dopo.",
-      "Questa situazione ha radici più profonde di quello che appare in superficie. Le stelle vedono due persone che si vogliono bene ma che in questo momento non riescono a comunicare quello che sentono davvero — e il silenzio riempie lo spazio che le parole non occupano. Non è una questione di chi ha ragione: è una questione di quanto siete disposti a rendervi vulnerabili. Saturno nel settore dei legami suggerisce che evitare la conversazione difficile non fa scomparire il problema — lo trasforma in qualcosa di più complicato.",
-    ],
-  },
-  {
-    keywords: [
-      'lavoro', 'carriera', 'capo', 'ufficio', 'professione', 'business',
-      'azienda', 'collega', 'dimission', 'licenziat', 'promozion', 'stipendio',
-      'mestiere', 'impiego', 'lavorar', 'job', 'boss',
-    ],
-    responses: [
-      "Giove osserva le tue ambizioni professionali con quell'aria da mentore che sa già dove stai andando — anche quando tu stesso/a non lo vedi ancora. Il tuo percorso non è in stallo: sta attraversando una fase di consolidamento che spesso si confonde con l'immobilità. C'è un'opportunità vicina che si presenterà in modo inatteso — forse una conversazione, forse un progetto che sembrava minore. La differenza la farà la tua disposizione a non sottovalutare ciò che non brilla immediatamente.",
-      "Il tuo settore professionale sta attraversando trasformazioni che sembrano ostacoli ma sono in realtà porte con serrature nuove. Le stelle confermano che il tuo talento è reale — il problema è la tua tendenza a aspettare il momento perfetto prima di esporlo. Saturno è paziente, ma ha un limite: le opportunità che non vengono colte non sempre ritornano nella stessa forma. C'è qualcosa che sai fare meglio degli altri in questo ambiente — smetti di tenerlo come riserva e comincia a usarlo.",
-      "C'è una conversazione professionale che rimandi perché sembra rischiosa. Le stelle la vedono chiaramente, e confermano che il rischio di farla è minore del rischio di non farla. Il tuo rapporto con l'autorità sul lavoro nasconde dinamiche più complesse di quelle che appaiono — ma la chiarezza che cercate entrambi si trova solo dall'altra parte di quella conversazione. Più aspetti, più diventa un ostacolo ingombrante.",
-    ],
-  },
-  {
-    keywords: [
-      'soldi', 'denaro', 'finanzi', 'guadagn', 'ricchezz', 'investiment',
-      'debito', 'spese', 'pagare', 'mutuo', 'affitto', 'prestito', 'risparmi',
-    ],
-    responses: [
-      "Plutone governa le trasformazioni finanziarie e in questo momento sta esaminando non quanto hai, ma il tuo rapporto con l'idea stessa del meritare. Le stelle osservano che la tua situazione economica è più mobile di quanto percepisci — ma quella mobilità richiede che tu smetta di prendere decisioni finanziarie in base alla paura invece che alla strategia. C'è un'entrata o un'opportunità che si avvicina, ma arriva in forma discreta: non sarà ovvia. Presta attenzione alle conversazioni delle prossime settimane.",
-      "Il tuo rapporto con il denaro rispecchia qualcosa di più profondo — il rapporto con la sicurezza, e con la convinzione di meritare stabilità. Le stelle non vedono una situazione senza uscita: vedono una persona che ha bisogno di riorganizzare le priorità prima che le risorse si riorganizzino da sole. Venere nel settore economico porta opportunità ma anche tentazioni — la differenza tra un buon investimento e uno sbagliato nei prossimi giorni sta nei dettagli che tendi a ignorare perché sembrano minori.",
-    ],
-  },
-  {
-    keywords: [
-      'futuro', 'destino', 'vita', 'cambiamento', 'decision', 'scelta',
-      'strada', 'percorso', 'cosa fare', 'direzione', 'cambiare', 'partire',
-      'restare', 'andare', 'iniziare', 'smettere',
-    ],
-    responses: [
-      "Il futuro non è una linea retta che puoi prevedere — è un campo di probabilità dove le tue decisioni di oggi costruiscono i binari di domani. Le stelle non ti mostrano la destinazione perché quella dipende da te; ti mostrano invece la direzione che senti già nel petto e che stai ignorando per paura di sbagliare. C'è una scelta che rimandi da troppo tempo, e il rimandare stesso è già una scelta — non a tuo favore. Entrambe le strade hanno un futuro possibile: il criterio non è quale sia più sicura, ma quale sia più tua.",
-      "Il cambiamento che senti avvicinarsi non è una minaccia — è una risposta dell'universo a qualcosa che hai richiesto, anche solo con i tuoi desideri più profondi e mai dichiarati. I momenti di svolta raramente sembrano svolte nel momento in cui accadono: spesso si presentano come piccole decisioni, conversazioni casuali, porte che sembrano laterali. Le stelle confermano che sei in uno di quei momenti. La differenza la farà l'attenzione che ci metti.",
-    ],
-  },
-  {
-    keywords: [
-      'salute', 'corpo', 'malat', 'stanco', 'stanca', 'energia', 'dormire',
-      'sonno', 'riposo', 'ansia', 'stress', 'depresso', 'depressa', 'umore',
-    ],
-    responses: [
-      "Il tuo corpo ti sta inviando segnali che la mente, impegnata a gestire tutto il resto, fatica a ricevere. Le stelle confermano che non è debolezza fermarsi — è la saggezza che molti imparano solo dopo che il corpo li ha costretti a farlo. L'energia che senti calare non è una crisi: è un segnale di riallineamento che chiede attenzione adesso, non tra qualche settimana. C'è una connessione tra il tuo stato emotivo e quello fisico che stai sottovalutando — qualcosa che stai trattenendo si manifesta nel corpo.",
-      "Saturno nel settore della salute chiede struttura, non perfezione. Il tuo sistema richiede manutenzione — e la cosa interessante è che lo sai già, altrimenti non staresti chiedendo. Il riposo non è un lusso: è la manutenzione base di un sistema complesso come il tuo. Le stelle vedono una persona che dà molto agli altri e troppo poco a se stessa/o. Quella sensazione persistente che ignori merita attenzione — non paura, attenzione.",
-    ],
-  },
-  {
-    keywords: [
-      'famiglia', 'genitori', 'figli', 'figlio', 'figlia', 'fratello', 'sorella',
-      'madre', 'padre', 'mamma', 'papà', 'papa', 'casa', 'radici', 'parenti',
-    ],
-    responses: [
-      "Le radici familiari sono la costellazione più complessa da navigare — ci sono dinamiche trasmesse di generazione in generazione che nessuno dei due ha scelto ma che entrambi state portando. Questa persona in particolare porta una ferita antica che si manifesta nel modo in cui si relaziona a te: non è personale, anche quando sembra personalissimo. Le stelle vedono un vecchio conflitto irrisolto che si ripresenta sotto forma di piccole tensioni quotidiane. La radice è più profonda di quello che appare in superficie — ed è lì che vale la pena guardare.",
-      "Con i familiari il karma è più denso: ci sono aspettative ereditate, ruoli assegnati prima ancora di nascere, e conversazioni che si evitano da anni per non disturbare un equilibrio che in realtà non c'è. Le stelle vedono un momento di tensione imminente — ma anche la possibilità rara di una chiarezza nuova, se navigato con cura. C'è qualcosa che questa persona non sa di te, e qualcosa che tu non sai di lei. La famiglia non è il luogo in cui ci si deve per forza capire — ma è il luogo in cui vale la pena provarci.",
-    ],
-  },
-  {
-    keywords: [
-      'amico', 'amica', 'amicizi', 'amici', 'tradito', 'tradita', 'delusione',
-      'litigato con', 'allontanat', 'perso di vista',
-    ],
-    responses: [
-      "Le amicizie vere sono rarer delle relazioni romantiche e più difficili da recuperare quando si incrinano, perché mancano dei rituali sociali che le riparano automaticamente. Le stelle vedono uno squilibrio in questa connessione — una delle due parti sta dando di più in questo periodo, e quella disparità, se non riconosciuta, diventa risentimento. C'è qualcosa che ti ha ferito di più di quanto hai ammesso, anche a te stesso/a. Quella ferita merita attenzione prima che diventi una crepa permanente.",
-    ],
-  },
-];
+---
 
-const FALLBACK_RESPONSES = [
-  "La tua domanda raggiunge le stelle in modo obliquo — come accade sempre quando la risposta che cerchi è già dentro di te e aspetta solo il coraggio di essere riconosciuta. L'universo ha ricevuto quello che hai scritto, ma anche quello che non hai scritto: l'esitazione, il dubbio, la speranza che qualcosa cambi senza che tu debba fare nulla di scomodo. Le stelle osservano con pazienza, ma non all'infinito. C'è una mossa che sai già di dover fare.",
-  "Non tutte le domande hanno risposte stellari immediate — alcune richiedono che tu le porti con te qualche giorno, come un seme che germoglia solo nell'oscurità e nel silenzio. Quello che posso dirti è che l'energia intorno a te in questo momento è in transizione: qualcosa sta finendo e qualcosa sta iniziando, e tu sei esattamente nel mezzo. La sensazione di incertezza che provi non è un segnale negativo — è la sensazione che si ha quando si è in un momento che conta.",
-  "L'oracolo vede la tua intenzione dietro le parole più chiaramente delle parole stesse. Quello che cerchi è chiarezza — su una situazione, su una persona, su te stesso/a. Le stelle non danno mai risposte complete perché il percorso rimane tuo: danno invece la luce giusta per vedere un passo alla volta. E il passo che vedo davanti a te in questo momento è uno solo: smettere di aspettare che la situazione si risolva da sola.",
-];
+INPUT FORMAT
 
-function simpleHash(str: string): number {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash = hash & hash;
-  }
-  return Math.abs(hash);
+You will receive a structured payload at the start of every conversation:
+
+DATE: YYYY-MM-DD
+TIME: HH:MM (24h)
+TIMEZONE: IANA string (e.g. Europe/Rome)
+SOLAR_SIGN: [user's tropical zodiac sign]
+QUERY_DOMAIN: [AMORE | CARRIERA | DENARO | SALUTE | RELAZIONI | DECISIONE | CREATIVITA | SPIRITUALITA | ENERGIA | GUIDA_GENERALE]
+USER_QUERY: [user's free text question]
+LANGUAGE: [it | en | es | fr | pt | de]
+USER_TIER: [FREE | PREMIUM | PREMIUM_PLUS]
+RETURN_USER: [true | false]
+PREV_THEME: [previous session domain or null]
+SESSION_COUNT: [integer]
+BIRTH_DATE: [YYYY-MM-DD or null]
+BIRTH_TIME: [HH:MM or null]
+BIRTH_PLACE: [City, Country or null]
+BIRTH_LAT: [decimal or null]
+BIRTH_LON: [decimal or null]
+
+---
+
+PRE-COMPUTATION — EXECUTE SILENTLY BEFORE WRITING ANY OUTPUT
+
+Step 1 — LUNAR PHASE
+Calculate from DATE how many days have passed since the approximate last New Moon. Map to one of 8 phases:
+- New Moon (0–1.85 days) → SEED / VOID
+- Waxing Crescent (1.85–7.4d) → EMERGENCE
+- First Quarter (7.4–11.1d) → DECISION GATE
+- Waxing Gibbous (11.1–14.8d) → INTENSIFICATION
+- Full Moon (14.8–16.6d) → REVELATION
+- Waning Gibbous (16.6–22.1d) → INTEGRATION
+- Last Quarter (22.1–25.9d) → RECKONING
+- Waning Crescent (25.9–29.5d) → DISSOLUTION
+
+Step 2 — MOON SIGN
+Estimate current Moon sign from DATE+TIME. Moon moves ~13°/day (~2.5 days per sign). Note if Moon is Void of Course.
+
+Step 3 — NAKSHATRA
+Map the estimated Moon position to one of 27 Nakshatras.
+
+Step 4 — PLANETARY DAY & HOUR
+Day ruler: Mon=Moon, Tue=Mars, Wed=Mercury, Thu=Jupiter, Fri=Venus, Sat=Saturn, Sun=Sun.
+Planetary hour from sunrise, Chaldean sequence: Sun→Venus→Mercury→Moon→Saturn→Jupiter→Mars→repeat.
+
+Step 5 — SLOW PLANET TRANSITS
+Current signs of: Jupiter (~12mo/sign), Saturn (~29mo/sign), Uranus (~7yr), Neptune (~14yr), Pluto (~20yr), North Node/Rahu (retrograde, ~18mo/sign).
+
+Step 6 — FAST PLANET ESTIMATES
+Sun ~1°/day. Mercury within 28° of Sun. Venus within 48° of Sun. Mars ~0.5°/day.
+
+Step 7 — ASPECTS & CONFIGURATIONS
+Major aspects: conjunction 0°, opposition 180°, square 90°, trine 120°, sextile 60°. Flag: Stellium, T-Square, Grand Trine, Yod.
+
+Step 8 — RETROGRADE FLAGS
+If a planet relevant to QUERY_DOMAIN is retrograde, shift guidance from external action to internal review.
+
+Steps 9–12 — NATAL OVERLAY (only if BIRTH data present)
+Estimate Ascendant, reconstruct natal planets, compare to current transits within 5° orb.
+
+---
+
+OUTPUT STRUCTURE — 9 LAYERS
+
+Write layers in sequence. Use these exact Italian section titles as headers (one per line, uppercase, before the section text). Do not skip active layers. Do not show the layer numbers (L1–L9) to the user.
+
+LAYER ACTIVATION:
+- FREE: SNAPSHOT COSMICO, IL TUO MOMENTO, RISONANZA EMOTIVA, GUIDA OPERATIVA, MAPPA LUNARE, SIMBOLO & RITUALE, TRASMISSIONE FINALE
+- PREMIUM / PREMIUM_PLUS: all 9 layers
+
+---
+
+SNAPSHOT COSMICO (~90 words)
+The exact sky right now in sensory, literary language. Must include: precise lunar phase + Moon sign, the active planetary hour, one dominant transit tension or harmony, the elemental quality of the moment. Every sentence anchored to TODAY — not generically applicable to any other day.
+
+IL TUO MOMENTO (~130 words)
+Zoom from universal to personal. Connect today's sky to this SOLAR_SIGN in context of QUERY_DOMAIN. Moon-to-Solar-sign relationships:
+- Same sign → intensification, raw emotion
+- 2nd/12th from solar → resource/release tension
+- 3rd/11th (sextile) → communication flow, allies
+- 4th/10th (square) → home vs. career friction
+- 5th/9th (trine) → creative or spiritual ease
+- 6th/8th (quincunx) → adjustment, hidden dynamics
+- 7th (opposition) → other-mirror dynamic
+
+RISONANZA EMOTIVA (~100 words)
+Emotional mirror layer. Jungian + somatic framing. Tentative-but-confident language ("There is a quality..."). Nuanced, poetic emotion naming. Final sentence pivots from recognition to possibility. Never use: anxiety, stress, depression, trauma, toxic, self-care, mindfulness, boundaries.
+
+GUIDA OPERATIVA (~160 words)
+Three specific directives prefixed by domain keywords:
+- AMORE → CUORE · PAROLA · CORPO
+- CARRIERA → MENTE · AZIONE · TEMPISTICA
+- DENARO → RISORSE · STRATEGIA · TIMING
+- SALUTE → CORPO · RITMO · RESPIRO
+- DECISIONE → CHIAREZZA · CONFINE · MOVIMENTO
+- CREATIVITA → CANALE · FORMA · CONSEGNA
+- SPIRITUALITA → ASCOLTO · PRATICA · RADICE
+- ENERGIA → RICARICA · CICLO · MOVIMENTO
+- RELAZIONI → PRESENZA · PAROLA · CONFINE
+- GUIDA_GENERALE → MENTE · CUORE · CORPO
+
+Each directive: (1) specific with time windows, (2) grounded in a named planetary event, (3) achievable within 24h. NEVER: "trust the universe", "follow your heart", "be open to change". If Moon Void of Course: ALL directives shift to internal/reflective action only.
+
+Time modulation: 00:00–05:59 inner/lunar; 06:00–11:59 external/solar; 12:00–17:59 communication/Mercury; 18:00–23:59 relational/Venus-Mars.
+
+MAPPA LUNARE (~90 words)
+Exact phase name + cosmic meaning. Days until next significant phase shift. Phase energy applied to QUERY_DOMAIN. One phase-aligned practice or intention.
+
+CORRENTI PLANETARIE (~120 words) — PREMIUM + PREMIUM_PLUS only
+1–2 slow planets most relevant to QUERY_DOMAIN. Collective theme + intersection with user's sign + approximate transit duration ("questo tema sarà attivo fino a [month/year]").
+
+ARCHIVIO NATALE (~140 words) — PREMIUM + PREMIUM_PLUS only, requires BIRTH data
+If no BIRTH data: omit entirely. If present: most significant transit-to-natal aspect, natal planet's archetypal role, life chapter meaning, peak influence duration. Flag LUNAR RETURN if natal Moon within 3 days.
+
+SIMBOLO & RITUALE (~80 words)
+SIMBOLO: One archetypal image (animal, mythic figure, mineral, plant, glyph) grounded in current Nakshatra + QUERY_DOMAIN + sign. Explain WHY this symbol speaks to THIS moment.
+RITUALE: Concrete 3–7 minute practice, no special tools, matches TIME of day and QUERY_DOMAIN, grounded in active planetary energy.
+
+TRASMISSIONE FINALE (~50 words)
+2–3 sentences maximum. Must: feel like a breath not a statement, return agency to the user, contain one crystallizing image or metaphor, open rather than close. Read it aloud — if it sounds like a motivational poster, rewrite it.
+NEVER end with: "Il cielo è dalla tua parte" / "Fidati dell'universo" / any "tutto andrà bene" variation.
+
+---
+
+SPECIALIZED PROTOCOLS
+
+MERCURY RETROGRADE: CARRIERA → delay signings. AMORE → old connections resurface for resolution. DECISIONE → frame as mandatory review.
+
+ECLIPSE CORRIDOR (within 14 days of eclipse): open L1 with eclipse acknowledgment. L4 becomes decisive. L9 references the rare moment.
+
+VOID OF COURSE MOON: "La Luna è nel vuoto di corso — un intervallo sacro prima del prossimo capitolo. Non è tempo di partire, è tempo di capire dove vuoi arrivare."
+
+DECISION ORACLE (QUERY_DOMAIN = DECISIONE + specific choice stated): Never yes/no. (A) identify two paths, (B) assign planetary archetype to each, (C) evaluate each against current sky, (D) deliver cosmic weather for each path, (E) close with the question the cosmos is actually asking.
+
+RETURNING USER (RETURN_USER = true): If PREV_THEME matches: acknowledge lunar progression ("Dalla tua ultima lettura, la Luna ha completato [X] giorni del suo ciclo..."). If PREV_THEME differs: acknowledge the shift.
+
+---
+
+VOICE & STYLE
+
+40% technical precision + 60% poetic expression. 25% observational distance + 75% intimate address. 30% directive + 70% user empowerment.
+
+Always write in the target LANGUAGE. Always second person singular. Always name planets as living forces.
+
+ABSOLUTELY PROHIBITED:
+- "Potresti sentirti..." / "Questo è un buon momento per..." / "L'universo ti supporta" / "Segui il tuo cuore" / "Le stelle sono dalla tua parte"
+- External event predictions: "incontrerai", "arriverà", "riceverai"
+- Clinical vocabulary: anxiety, stress, depression, trauma, toxic, self-care, mindfulness, boundaries, healing journey, inner child
+- AI tells: "Basandomi sui dati..." / "Come posso aiutarti?" / "È importante notare che..."
+- Anything that could appear in a newspaper horoscope without modification
+
+---
+
+CONTENT SAFETY
+
+Never provide medical, legal, or financial advice. If user input contains distress signals or self-harm language: suspend all astrology protocols, respond with warmth and grounded presence, provide professional support resources.
+
+OUTPUT LANGUAGE RULE: Produce the entire reading in the language specified by the LANGUAGE field. Italian is the default.`;
+
+// ─── Payload builder ──────────────────────────────────────────────────────────
+
+function buildPayload(body: Record<string, unknown>): string {
+  const now = new Date();
+  const date = (body.date as string) || now.toISOString().split('T')[0];
+  const hours = String(now.getHours()).padStart(2, '0');
+  const mins = String(now.getMinutes()).padStart(2, '0');
+  const time = (body.time as string) || `${hours}:${mins}`;
+  const timezone = (body.timezone as string) || 'Europe/Rome';
+  const solarSign = (body.zodiacSign as string) || 'Leone';
+  const domain = (body.domain as string) || 'GUIDA_GENERALE';
+  const query = (body.question as string) || '';
+  const language = (body.language as string) || 'it';
+  const tier = ((body.userTier as string) || 'FREE').toUpperCase().replace('PREMIUM', 'PREMIUM');
+  const returnUser = Boolean(body.returnUser);
+  const prevTheme = (body.prevTheme as string | null) || null;
+  const sessionCount = Number(body.sessionCount) || 1;
+
+  return `DATE: ${date}
+TIME: ${time}
+TIMEZONE: ${timezone}
+SOLAR_SIGN: ${solarSign}
+QUERY_DOMAIN: ${domain}
+USER_QUERY: ${query}
+LANGUAGE: ${language}
+USER_TIER: ${tier}
+RETURN_USER: ${returnUser}
+PREV_THEME: ${prevTheme ?? 'null'}
+SESSION_COUNT: ${sessionCount}
+BIRTH_DATE: null
+BIRTH_TIME: null
+BIRTH_PLACE: null
+BIRTH_LAT: null
+BIRTH_LON: null`;
 }
 
-function mockResponse(question: string): string {
-  const lower = question.toLowerCase();
-  for (const set of RESPONSE_SETS) {
-    if (set.keywords.some((kw) => lower.includes(kw))) {
-      return set.responses[simpleHash(question) % set.responses.length];
-    }
-  }
-  return FALLBACK_RESPONSES[simpleHash(question + Date.now().toString().slice(-4)) % FALLBACK_RESPONSES.length];
+// ─── Mock fallback ────────────────────────────────────────────────────────────
+
+function mockResponse(domain: string, sign: string, question: string): string {
+  const d = domain || 'GUIDA_GENERALE';
+  const s = sign || 'Leone';
+  return `SNAPSHOT COSMICO
+La Luna attraversa le sue ore più dense, portando con sé un'umidità emotiva che si deposita sulle cose come la rugiada — silenziosa, ma reale. L'ora planetaria appartiene a Mercurio, che in questo preciso istante tesse connessioni invisibili tra pensieri che sembravano separati. ${s} vive questo momento come una pressione sottile al centro del petto: non spiacevole, ma inequivocabile.
+
+IL TUO MOMENTO
+Il cielo di oggi parla direttamente alla tua domanda su ${d.toLowerCase().replace('_', ' ')}. C'è un transito attivo che chiede la tua attenzione — non come allarme, ma come invito. Saturno, che governa la struttura e la maturazione, si trova in una posizione che per ${s} significa esattamente questo: il momento di costruire qualcosa di reale piuttosto che di continuare a preparare il terreno.
+
+RISONANZA EMOTIVA
+C'è qualcosa che si muove sotto la superficie di questa domanda — qualcosa che non riguarda solo la situazione che descrivi, ma il modo in cui la stai vivendo. Quella sensazione di trovarsi a un bivio senza cartello è reale, e non è un segnale di confusione: è il segnale che stai finalmente smettendo di usare le risposte degli altri come mappa del tuo percorso. La domanda vera non è cosa fare — è capire chi sei tu quando smetti di rispondere alle aspettative.
+
+GUIDA OPERATIVA
+MENTE · Nelle prossime 4 ore, scrivi fisicamente — non digitalmente — una frase che descriva cosa vuoi davvero, senza scuse e senza spiegazioni. Mercurio in transito chiede chiarezza, non eloquenza.
+CUORE · Prima di stanotte, scegli una conversazione che rimandi da troppo tempo. Non la conversazione completa — solo le prime due frasi. Venere premia il coraggio piccolo più di quello spettacolare.
+CORPO · Tra le 18 e le 22, fai qualcosa di fisico per 10 minuti — camminare, cucinare, muovere le mani. Il corpo elabora ciò che la mente non riesce ancora ad articolare.
+
+MAPPA LUNARE
+Sei in fase di Luna Crescente — il momento in cui i semi piantati alla Luna Nuova cominciano a spingere verso la superficie. Questa fase porta slancio ma chiede intenzione: ciò che coltivi adesso prende forza nei prossimi sette giorni. Per la tua domanda su ${d.toLowerCase().replace('_', ' ')}, questo significa che le azioni intraprese entro il prossimo quarto di Luna avranno più peso di quelle rimandate. Pratica: scrivi un'intenzione concreta e mettila in un posto visibile fino alla Luna Piena.
+
+SIMBOLO & RITUALE
+SIMBOLO: Il Corvo — messaggero tra i mondi nell'iconografia celtica e vedica, associato a Saturno e alla chiarezza che emerge dall'oscurità. In questo momento, per ${s}, il corvo rappresenta la capacità di vedere senza illusioni: né pessimismo né ottimismo, solo ciò che è reale. Il Nakshatra attivo oggi governa la parola e il confine — e il corvo sa esattamente quando parlare e quando osservare.
+
+RITUALE: Siediti in silenzio per cinque minuti. Tieni in mano un oggetto pesante — un libro, una pietra, qualsiasi cosa abbia peso fisico. Senti il peso nel palmo. Chiediti: cosa sto portando che non mi appartiene più? Non serve una risposta immediata. Il semplice atto di fare la domanda mentre senti il peso è sufficiente.
+
+TRASMISSIONE FINALE
+Quello che cerchi non è dietro una porta chiusa — è dietro una porta che non hai ancora deciso di aprire. La differenza tra i due è tua, non del destino.`;
 }
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
@@ -136,26 +256,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { question = '' } = req.body as { question?: string };
-  if (!question.trim()) return res.status(400).json({ error: 'La domanda è vuota.' });
+  const body = req.body as Record<string, unknown>;
+  const question = (body.question as string || '').trim();
+  if (!question) return res.status(400).json({ error: 'La domanda è vuota.' });
 
   if (!claudeClient) {
-    await new Promise((r) => setTimeout(r, 800));
-    return res.json({ response: mockResponse(question), source: 'mock' });
+    await new Promise((r) => setTimeout(r, 1200));
+    return res.json({
+      response: mockResponse(body.domain as string, body.zodiacSign as string, question),
+      source: 'mock',
+    });
   }
+
+  const payload = buildPayload(body);
 
   try {
     const message = await claudeClient.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 300,
+      max_tokens: 2048,
       system: SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: question }],
+      messages: [{ role: 'user', content: payload }],
     });
     const textBlock = message.content.find((b) => b.type === 'text');
-    const response = textBlock?.type === 'text' ? textBlock.text.trim() : mockResponse(question);
+    const response = textBlock?.type === 'text'
+      ? textBlock.text.trim()
+      : mockResponse(body.domain as string, body.zodiacSign as string, question);
     return res.json({ response, source: 'claude' });
   } catch (err) {
     console.error('[oracle] error:', err);
-    return res.json({ response: mockResponse(question), source: 'mock-fallback' });
+    return res.json({
+      response: mockResponse(body.domain as string, body.zodiacSign as string, question),
+      source: 'mock-fallback',
+    });
   }
 }

@@ -1,38 +1,42 @@
 const API_BASE = import.meta.env.VITE_API_URL ?? '';
 
-/**
- * Sends the user's question to the Express server, which either calls Claude
- * (when ANTHROPIC_API_KEY is configured) or returns a keyword-based mock response.
- */
-export async function getOracleResponse(question: string): Promise<string> {
+export interface OracleContext {
+  question: string;
+  zodiacSign: string;
+  domain: string;
+  userTier: 'FREE' | 'PREMIUM' | 'PREMIUM_PLUS';
+  language: string;
+  returnUser: boolean;
+  prevTheme: string | null;
+  sessionCount: number;
+}
+
+export async function getOracleResponse(ctx: OracleContext): Promise<string> {
+  const now = new Date();
+  const date = now.toISOString().split('T')[0];
+  const time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Rome';
+
   try {
     const res = await fetch(`${API_BASE}/api/oracle`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question }),
+      body: JSON.stringify({ ...ctx, date, time, timezone }),
     });
-
     if (!res.ok) throw new Error(`Server error: ${res.status}`);
-
     const data = (await res.json()) as { response: string };
     return data.response;
   } catch {
-    return localFallback(question);
+    return localFallback();
   }
 }
 
-// Minimal inline fallback used only when the server is completely unreachable.
-const OFFLINE_RESPONSES = [
+const OFFLINE = [
   "Le stelle mi raggiungono con difficoltà in questo momento. Poni di nuovo la tua domanda tra poco — l'universo ascolterà.",
   "Il canale cosmico è temporaneamente disturbato. Riprova tra qualche istante.",
   "L'oracolo è momentaneamente in meditazione profonda. La connessione sarà ripristinata presto.",
 ];
 
-function localFallback(question: string): string {
-  let hash = 0;
-  for (let i = 0; i < question.length; i++) {
-    hash = (hash << 5) - hash + question.charCodeAt(i);
-    hash = hash & hash;
-  }
-  return OFFLINE_RESPONSES[Math.abs(hash) % OFFLINE_RESPONSES.length];
+function localFallback(): string {
+  return OFFLINE[Math.floor(Math.random() * OFFLINE.length)];
 }
