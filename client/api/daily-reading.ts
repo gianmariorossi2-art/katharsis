@@ -127,62 +127,68 @@ ${natalBlock.split('\n').map(l => '    '+l).join('\n')}
 
 // ─── Gemini Imagen ────────────────────────────────────────────────────────────
 
-type GeminiResponse = {
-  predictions?: Array<{ bytesBase64Encoded?: string; mimeType?: string }>;
-  error?: { message: string; code?: number };
-};
-
-async function callImagen(model: string, prompt: string): Promise<GeminiResponse | null> {
-  const resp = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:predict?key=${GEMINI_KEY}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        instances: [{ prompt }],
-        parameters: { sampleCount: 1, aspectRatio: '1:1' },
-      }),
-    }
-  );
-  if (!resp.ok) {
-    const errText = await resp.text();
-    console.error(`[gemini/${model}] HTTP ${resp.status}:`, errText.slice(0, 400));
-    return null;
-  }
-  return resp.json() as Promise<GeminiResponse>;
-}
-
+// Imagen 3 richiede Vertex AI (non funziona con API key standard).
+// Usiamo Gemini 2.0 Flash che supporta generazione immagini via generateContent.
 async function generateImage(prompt: string): Promise<string | null> {
   if (!GEMINI_KEY) {
     console.log('[gemini] GEMINI_API_KEY not set — skipping');
     return null;
   }
-  try {
-    // Try Imagen 3, fall back to Imagen 3 Fast
-    let data = await callImagen('imagen-3.0-generate-001', prompt);
-    if (!data?.predictions?.[0]?.bytesBase64Encoded) {
-      console.log('[gemini] imagen-3.0-generate-001 failed, trying fast variant');
-      data = await callImagen('imagen-3.0-fast-generate-001', prompt);
-    }
 
-    if (data?.error) {
-      console.error('[gemini] error:', data.error.message);
-      return null;
-    }
+  // Modelli che supportano responseModalities IMAGE via API key standard
+  const MODELS = [
+    'gemini-2.0-flash-preview-image-generation',
+    'gemini-2.0-flash-exp',
+  ];
 
-    const pred = data?.predictions?.[0];
-    if (!pred?.bytesBase64Encoded) {
-      console.error('[gemini] no image returned:', JSON.stringify(data ?? {}).slice(0, 200));
-      return null;
-    }
+  for (const model of MODELS) {
+    try {
+      const resp = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { responseModalities: ['IMAGE', 'TEXT'] },
+          }),
+        }
+      );
 
-    console.log('[gemini] image generated OK');
-    const mime = pred.mimeType || 'image/png';
-    return `data:${mime};base64,${pred.bytesBase64Encoded}`;
-  } catch (err) {
-    console.error('[gemini] unexpected error:', err);
-    return null;
+      if (!resp.ok) {
+        const errText = await resp.text();
+        console.error(`[gemini/${model}] HTTP ${resp.status}:`, errText.slice(0, 300));
+        continue;
+      }
+
+      const data = await resp.json() as {
+        candidates?: Array<{
+          content?: { parts?: Array<{ inlineData?: { mimeType: string; data: string } }> };
+        }>;
+        error?: { message: string };
+      };
+
+      if (data.error) {
+        console.error(`[gemini/${model}] error:`, data.error.message);
+        continue;
+      }
+
+      const parts = data.candidates?.[0]?.content?.parts ?? [];
+      const imgPart = parts.find(p => p.inlineData?.data);
+      if (!imgPart?.inlineData) {
+        console.error(`[gemini/${model}] no image part in response`);
+        continue;
+      }
+
+      console.log(`[gemini/${model}] image generated OK`);
+      return `data:${imgPart.inlineData.mimeType};base64,${imgPart.inlineData.data}`;
+    } catch (err) {
+      console.error(`[gemini/${model}] fetch error:`, err);
+    }
   }
+
+  console.error('[gemini] all models failed');
+  return null;
 }
 
 // ─── Mock fallback ────────────────────────────────────────────────────────────
