@@ -128,7 +128,10 @@ ${natalBlock.split('\n').map(l => '    '+l).join('\n')}
 // ─── Gemini Imagen ────────────────────────────────────────────────────────────
 
 async function generateImage(prompt: string): Promise<string | null> {
-  if (!GEMINI_KEY) return null;
+  if (!GEMINI_KEY) {
+    console.log('[gemini] GEMINI_API_KEY not set — skipping image generation');
+    return null;
+  }
   try {
     const resp = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${GEMINI_KEY}`,
@@ -141,11 +144,33 @@ async function generateImage(prompt: string): Promise<string | null> {
         }),
       }
     );
-    if (!resp.ok) return null;
-    const data = await resp.json() as { predictions?: Array<{ bytesBase64Encoded: string }> };
-    const b64 = data.predictions?.[0]?.bytesBase64Encoded;
-    return b64 ? `data:image/png;base64,${b64}` : null;
-  } catch {
+
+    if (!resp.ok) {
+      const errText = await resp.text();
+      console.error(`[gemini] HTTP ${resp.status}:`, errText.slice(0, 300));
+      return null;
+    }
+
+    const data = await resp.json() as {
+      predictions?: Array<{ bytesBase64Encoded?: string; mimeType?: string }>;
+      error?: { message: string };
+    };
+
+    if (data.error) {
+      console.error('[gemini] API error:', data.error.message);
+      return null;
+    }
+
+    const pred = data.predictions?.[0];
+    if (!pred?.bytesBase64Encoded) {
+      console.error('[gemini] No image in response:', JSON.stringify(data).slice(0, 200));
+      return null;
+    }
+
+    const mime = pred.mimeType || 'image/png';
+    return `data:${mime};base64,${pred.bytesBase64Encoded}`;
+  } catch (err) {
+    console.error('[gemini] fetch error:', err);
     return null;
   }
 }
