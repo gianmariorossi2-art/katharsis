@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import type { UserProfile, DailyCheckin, Mood } from '@/types';
+import type { UserProfile, DailyCheckin, DailyReading, Mood } from '@/types';
 import { generateDailyHoroscope } from '@/lib/horoscope';
 import { GEM_REWARDS, getStreakMilestoneBonus, getLevelInfo } from '@/lib/gamification';
+import { fetchDailyReading } from '@/lib/dailyReading';
 import {
   doc, getDoc, setDoc, getDocs,
   collection, query, where, orderBy, addDoc,
@@ -31,11 +32,14 @@ interface AppContextValue {
   todayCheckin: DailyCheckin | null;
   oracleMessagesCount: number;
   isLoading: boolean;
+  dailyReading: DailyReading | null;
+  dailyReadingLoading: boolean;
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
   addCheckin: (mood: Mood) => Promise<DailyCheckin>;
   revealHoroscope: () => void;
   addGems: (amount: number) => void;
   addOracleMessage: () => void;
+  generateReading: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -47,6 +51,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [todayCheckin, setTodayCheckin] = useState<DailyCheckin | null>(null);
   const [oracleMessagesCount, setOracleMessagesCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [dailyReading, setDailyReading] = useState<DailyReading | null>(null);
+  const [dailyReadingLoading, setDailyReadingLoading] = useState(false);
 
   useEffect(() => {
     if (!user || !FIREBASE_CONFIGURED) {
@@ -116,6 +122,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           setOracleMessagesCount(oracleSnap.size);
         } catch {
           // ignore
+        }
+
+        // Load today's cached daily reading from Firestore
+        try {
+          const readingId = `${user!.uid}_${todayStr}`;
+          const readingSnap = await getDoc(doc(db, 'daily_readings', readingId));
+          if (readingSnap.exists()) {
+            setDailyReading(readingSnap.data() as DailyReading);
+          }
+        } catch {
+          // ignore — reading will be generated on demand
         }
       } finally {
         setIsLoading(false);
@@ -213,6 +230,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addGems(GEM_REWARDS.DAILY_HOROSCOPE);
   }, [todayCheckin, user, addGems]);
 
+  const generateReading = useCallback(async () => {
+    if (!userProfile || dailyReadingLoading) return;
+    setDailyReadingLoading(true);
+    try {
+      const result = await fetchDailyReading(userProfile);
+      setDailyReading(result.reading);
+      // Cache natal chart + coordinates back to profile if we got them
+      if (result.natal_chart || result.birth_lat != null) {
+        const profileUpdates: Partial<UserProfile> = {};
+        if (result.natal_chart) profileUpdates.natal_chart = result.natal_chart;
+        if (result.birth_lat != null) profileUpdates.birth_lat = result.birth_lat;
+        if (result.birth_lon != null) profileUpdates.birth_lon = result.birth_lon;
+        setUserProfile(prev => prev ? { ...prev, ...profileUpdates } : prev);
+        if (user && FIREBASE_CONFIGURED) {
+          setDoc(doc(db, 'profiles', user.uid), profileUpdates, { merge: true }).catch(() => {});
+        }
+      }
+      // Cache the reading in Firestore
+      if (user && FIREBASE_CONFIGURED) {
+        const readingId = `${user.uid}_${todayStr}`;
+        setDoc(doc(db, 'daily_readings', readingId), result.reading, { merge: false }).catch(() => {});
+      }
+    } finally {
+      setDailyReadingLoading(false);
+    }
+  }, [userProfile, user, dailyReadingLoading]);
+
   const addOracleMessage = useCallback(() => {
     setOracleMessagesCount(prev => prev + 1);
     if (user && FIREBASE_CONFIGURED) {
@@ -226,7 +270,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   return (
     <AppContext.Provider value={{
       userProfile, checkins, todayCheckin, oracleMessagesCount, isLoading,
-      updateProfile, addCheckin, revealHoroscope, addGems, addOracleMessage,
+      dailyReading, dailyReadingLoading,
+      updateProfile, addCheckin, revealHoroscope, addGems, addOracleMessage, generateReading,
     }}>
       {children}
     </AppContext.Provider>
