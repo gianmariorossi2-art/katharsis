@@ -32,6 +32,10 @@ export interface UserProfile {
   subscription_status: 'free' | 'premium';
   language?: string;
   created_at: string;
+  birth_date?: string | null;
+  birth_time?: string | null;
+  birth_place?: string | null;
+  onboarding_complete?: boolean;
 }
 
 export interface DailyCheckin {

@@ -196,6 +196,9 @@ function buildPayload(body: Record<string, unknown>): string {
   const returnUser = Boolean(body.returnUser);
   const prevTheme = (body.prevTheme as string | null) || null;
   const sessionCount = Number(body.sessionCount) || 1;
+  const birthDate = (body.birthDate as string | null) || null;
+  const birthTime = (body.birthTime as string | null) || null;
+  const birthPlace = (body.birthPlace as string | null) || null;
 
   return `DATE: ${date}
 TIME: ${time}
@@ -208,9 +211,9 @@ USER_TIER: ${tier}
 RETURN_USER: ${returnUser}
 PREV_THEME: ${prevTheme ?? 'null'}
 SESSION_COUNT: ${sessionCount}
-BIRTH_DATE: null
-BIRTH_TIME: null
-BIRTH_PLACE: null
+BIRTH_DATE: ${birthDate ?? 'null'}
+BIRTH_TIME: ${birthTime ?? 'null'}
+BIRTH_PLACE: ${birthPlace ?? 'null'}
 BIRTH_LAT: null
 BIRTH_LON: null`;
 }

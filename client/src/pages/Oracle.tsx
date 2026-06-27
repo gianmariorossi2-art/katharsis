@@ -152,6 +152,9 @@ export default function Oracle() {
         returnUser: sessionCount > 1,
         prevTheme,
         sessionCount,
+        birthDate: userProfile?.birth_date ?? null,
+        birthTime: userProfile?.birth_time ?? null,
+        birthPlace: userProfile?.birth_place ?? null,
       });
 
       const oracleMessage: OracleMessage = {

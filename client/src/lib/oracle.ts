@@ -9,6 +9,9 @@ export interface OracleContext {
   returnUser: boolean;
   prevTheme: string | null;
   sessionCount: number;
+  birthDate?: string | null;
+  birthTime?: string | null;
+  birthPlace?: string | null;
 }
 
 export async function getOracleResponse(ctx: OracleContext): Promise<string> {

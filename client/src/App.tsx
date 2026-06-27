@@ -1,7 +1,7 @@
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
-import { AppProvider } from '@/contexts/AppContext';
+import { AppProvider, useApp } from '@/contexts/AppContext';
 import BottomNav from '@/components/BottomNav';
 import Home from '@/pages/Home';
 import Oracle from '@/pages/Oracle';
@@ -11,6 +11,7 @@ import Profile from '@/pages/Profile';
 import Luna from '@/pages/Luna';
 import Carte from '@/pages/Carte';
 import Auth from '@/pages/Auth';
+import Onboarding from '@/pages/Onboarding';
 
 const TAB_ROUTES: Record<string, string> = {
   home: '/',
@@ -104,9 +105,16 @@ function AuthGate() {
 
   return (
     <AppProvider>
-      <AppShell />
+      <OnboardingGate />
     </AppProvider>
   );
+}
+
+function OnboardingGate() {
+  const { userProfile, isLoading } = useApp();
+  if (isLoading) return null;
+  if (!userProfile?.onboarding_complete) return <Onboarding />;
+  return <AppShell />;
 }
 
 export default function App() {
