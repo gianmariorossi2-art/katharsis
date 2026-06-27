@@ -110,12 +110,16 @@ function AuthGate() {
   );
 }
 
+const ONBOARDED_KEY = 'katharsis_onboarded';
+
 function OnboardingGate() {
   const { userProfile, isLoading } = useApp();
   if (isLoading) return null;
-  if (!userProfile?.onboarding_complete) return <Onboarding />;
+  const done = userProfile?.onboarding_complete || localStorage.getItem(ONBOARDED_KEY) === 'true';
+  if (!done) return <Onboarding />;
   return <AppShell />;
 }
+
 
 export default function App() {
   return (

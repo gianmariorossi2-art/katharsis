@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useApp } from '@/contexts/AppContext';
 import { track } from '@/lib/analytics';
 
+const ONBOARDED_KEY = 'katharsis_onboarded';
+
 const STEPS = ['data', 'ora', 'luogo'] as const;
 type Step = typeof STEPS[number];
 
@@ -31,6 +33,7 @@ export default function Onboarding() {
 
   async function handleComplete() {
     setSaving(true);
+    localStorage.setItem(ONBOARDED_KEY, 'true');
     track('onboarding_complete', { has_time: !!birthTime, has_place: !!birthPlace });
     await updateProfile({
       birth_date: birthDate || null,
@@ -41,6 +44,7 @@ export default function Onboarding() {
   }
 
   async function handleSkip() {
+    localStorage.setItem(ONBOARDED_KEY, 'true');
     track('onboarding_skipped', { step });
     await updateProfile({ onboarding_complete: true });
   }
