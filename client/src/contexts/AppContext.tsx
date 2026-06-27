@@ -124,12 +124,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           // ignore
         }
 
-        // Load today's cached daily reading from Firestore
+        // Load today's cached daily reading from Firestore + image from localStorage
         try {
           const readingId = `${user!.uid}_${todayStr}`;
           const readingSnap = await getDoc(doc(db, 'daily_readings', readingId));
           if (readingSnap.exists()) {
-            setDailyReading(readingSnap.data() as DailyReading);
+            const reading = readingSnap.data() as DailyReading;
+            const cachedImg = localStorage.getItem(`katharsis_img_${todayStr}`);
+            if (cachedImg) reading.image_url = cachedImg;
+            setDailyReading(reading);
           }
         } catch {
           // ignore — reading will be generated on demand
@@ -236,7 +239,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       const result = await fetchDailyReading(userProfile);
       setDailyReading(result.reading);
-      // Cache natal chart + coordinates back to profile if we got them
+
+      // Cache natal chart + coordinates to profile
       if (result.natal_chart || result.birth_lat != null) {
         const profileUpdates: Partial<UserProfile> = {};
         if (result.natal_chart) profileUpdates.natal_chart = result.natal_chart;
@@ -247,10 +251,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           setDoc(doc(db, 'profiles', user.uid), profileUpdates, { merge: true }).catch(() => {});
         }
       }
-      // Cache the reading in Firestore
+
+      // image_url is base64 (1-3MB) — too large for Firestore (1MB limit).
+      // Store image in localStorage, text reading in Firestore.
+      const { image_url, ...readingWithoutImage } = result.reading;
+      if (image_url) {
+        try { localStorage.setItem(`katharsis_img_${todayStr}`, image_url); } catch { /* storage full */ }
+      }
       if (user && FIREBASE_CONFIGURED) {
         const readingId = `${user.uid}_${todayStr}`;
-        setDoc(doc(db, 'daily_readings', readingId), result.reading, { merge: false }).catch(() => {});
+        setDoc(doc(db, 'daily_readings', readingId), readingWithoutImage, { merge: false }).catch(() => {});
       }
     } finally {
       setDailyReadingLoading(false);
