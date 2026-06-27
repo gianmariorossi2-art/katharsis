@@ -3,7 +3,7 @@ import type { UserProfile, DailyCheckin, Mood } from '@/types';
 import { generateDailyHoroscope } from '@/lib/horoscope';
 import { GEM_REWARDS, getStreakMilestoneBonus, getLevelInfo } from '@/lib/gamification';
 import {
-  doc, getDoc, setDoc, updateDoc, getDocs,
+  doc, getDoc, setDoc, getDocs,
   collection, query, where, orderBy, addDoc,
 } from 'firebase/firestore';
 import { db, FIREBASE_CONFIGURED } from '@/lib/firebase';
@@ -61,13 +61,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     async function loadData() {
       setIsLoading(true);
       try {
-        // Load profile — fall back to mock if missing or denied
+        // Load profile — create it if missing, fall back to mock if denied
         try {
           const profileSnap = await getDoc(doc(db, 'profiles', user!.uid));
           if (profileSnap.exists()) {
             setUserProfile({ id: user!.uid, ...profileSnap.data() } as UserProfile);
           } else {
-            setUserProfile({ ...MOCK_USER, id: user!.uid, name: user!.displayName || 'Viandante' });
+            // First login — write initial profile to Firestore
+            const initial = { ...MOCK_USER, id: user!.uid, name: user!.displayName || 'Viandante' };
+            const { id: _id, ...initialData } = initial;
+            try {
+              await setDoc(doc(db, 'profiles', user!.uid), {
+                ...initialData,
+                created_at: new Date().toISOString(),
+              });
+            } catch { /* rules not ready yet */ }
+            setUserProfile(initial);
           }
         } catch {
           setUserProfile({ ...MOCK_USER, id: user!.uid, name: user!.displayName || 'Viandante' });
@@ -125,9 +134,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
     if (user && FIREBASE_CONFIGURED) {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { id: _id, ...rest } = updates as UserProfile;
-        await updateDoc(doc(db, 'profiles', user.uid), rest as Record<string, unknown>);
+        await setDoc(doc(db, 'profiles', user.uid), rest as Record<string, unknown>, { merge: true });
       } catch { /* ignore */ }
     }
   }, [user]);
@@ -140,7 +148,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const level = getLevelInfo(newXp).level;
       const updated = { ...prev, gems: newGems, xp: newXp, level };
       if (user && FIREBASE_CONFIGURED) {
-        updateDoc(doc(db, 'profiles', user.uid), { gems: newGems, xp: newXp, level }).catch(() => {});
+        setDoc(doc(db, 'profiles', user.uid), { gems: newGems, xp: newXp, level }, { merge: true }).catch(() => {});
       }
       return updated;
     });
@@ -183,11 +191,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         gems: newGems, xp: newXp, level,
       };
       if (user && FIREBASE_CONFIGURED) {
-        updateDoc(doc(db, 'profiles', user.uid), {
+        setDoc(doc(db, 'profiles', user.uid), {
           current_streak: updated.current_streak,
           record_streak: updated.record_streak,
           gems: updated.gems, xp: updated.xp, level: updated.level,
-        }).catch(() => {});
+        }, { merge: true }).catch(() => {});
       }
       return updated;
     });
@@ -200,7 +208,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setTodayCheckin(prev => prev ? { ...prev, opened: true } : prev);
     setCheckins(prev => prev.map(c => c.id === todayCheckin.id ? { ...c, opened: true } : c));
     if (user && FIREBASE_CONFIGURED) {
-      updateDoc(doc(db, 'checkins', `${user.uid}_${todayStr}`), { opened: true }).catch(() => {});
+      setDoc(doc(db, 'checkins', `${user.uid}_${todayStr}`), { opened: true }, { merge: true }).catch(() => {});
     }
     addGems(GEM_REWARDS.DAILY_HOROSCOPE);
   }, [todayCheckin, user, addGems]);
