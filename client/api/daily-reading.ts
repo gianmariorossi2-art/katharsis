@@ -142,11 +142,10 @@ async function generateImage(prompt: string): Promise<string | null> {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'dall-e-3',
-        prompt: prompt.slice(0, 1000), // DALL-E 3 max 1000 chars
+        model: 'gpt-image-1',
+        prompt: prompt.slice(0, 1500),
         n: 1,
         size: '1024x1024',
-        quality: 'standard',
       }),
     });
 
@@ -156,17 +155,29 @@ async function generateImage(prompt: string): Promise<string | null> {
       return null;
     }
 
-    const data = await resp.json() as { data?: Array<{ url?: string }> };
-    const url = data.data?.[0]?.url;
-    if (!url) { console.error('[dalle] no url in response'); return null; }
+    const data = await resp.json() as {
+      data?: Array<{ b64_json?: string; url?: string }>;
+    };
+    const item = data.data?.[0];
+    if (!item) { console.error('[dalle] no data in response'); return null; }
 
-    // 2. Scarica l'immagine e convertila in base64 per il cache localStorage
-    const imgResp = await fetch(url);
-    if (!imgResp.ok) return url; // fallback: URL diretto (scade in ~1h)
-    const buf = await imgResp.arrayBuffer();
-    const b64 = Buffer.from(buf).toString('base64');
-    console.log('[dalle] image generated OK');
-    return `data:image/png;base64,${b64}`;
+    // gpt-image-1 restituisce b64_json direttamente
+    if (item.b64_json) {
+      console.log('[dalle] image generated OK (base64)');
+      return `data:image/png;base64,${item.b64_json}`;
+    }
+
+    // fallback: vecchio formato URL (dall-e-3)
+    if (item.url) {
+      const imgResp = await fetch(item.url);
+      if (!imgResp.ok) return item.url;
+      const buf = await imgResp.arrayBuffer();
+      console.log('[dalle] image generated OK (url→base64)');
+      return `data:image/png;base64,${Buffer.from(buf).toString('base64')}`;
+    }
+
+    console.error('[dalle] no image in response:', JSON.stringify(data).slice(0, 200));
+    return null;
   } catch (err) {
     console.error('[dalle] error:', err);
     return null;
