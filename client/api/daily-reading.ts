@@ -8,7 +8,7 @@ const claude = process.env.ANTHROPIC_API_KEY
   ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   : null;
 
-const GEMINI_KEY = process.env.GEMINI_API_KEY || '';
+const OPENAI_KEY = process.env.OPENAI_API_KEY || '';
 
 // ─── Natal chart → formatted block ───────────────────────────────────────────
 
@@ -127,69 +127,50 @@ ${natalBlock.split('\n').map(l => '    '+l).join('\n')}
 
 // ─── Gemini Imagen ────────────────────────────────────────────────────────────
 
-// Imagen 3 richiede Vertex AI (non funziona con API key standard).
-// Usiamo Gemini 2.0 Flash che supporta generazione immagini via generateContent.
+// DALL-E 3 — funziona con API key OpenAI standard, nessuna config extra
 async function generateImage(prompt: string): Promise<string | null> {
-  if (!GEMINI_KEY) {
-    console.log('[gemini] GEMINI_API_KEY not set — skipping');
+  if (!OPENAI_KEY) {
+    console.log('[dalle] OPENAI_API_KEY not set — skipping image generation');
     return null;
   }
+  try {
+    // 1. Chiedi a DALL-E 3 l'URL dell'immagine
+    const resp = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'dall-e-3',
+        prompt: prompt.slice(0, 1000), // DALL-E 3 max 1000 chars
+        n: 1,
+        size: '1024x1024',
+        quality: 'standard',
+      }),
+    });
 
-  // Modelli che supportano responseModalities IMAGE via API key standard
-  const MODELS = [
-    'gemini-2.0-flash-exp',
-    'gemini-2.0-flash',
-    'gemini-2.0-flash-001',
-  ];
-
-  for (const model of MODELS) {
-    try {
-      const resp = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { responseModalities: ['IMAGE', 'TEXT'] },
-          }),
-        }
-      );
-
-      if (!resp.ok) {
-        const errText = await resp.text();
-        console.error(`[gemini/${model}] HTTP ${resp.status}:`, errText.slice(0, 300));
-        continue;
-      }
-
-      const data = await resp.json() as {
-        candidates?: Array<{
-          content?: { parts?: Array<{ inlineData?: { mimeType: string; data: string } }> };
-        }>;
-        error?: { message: string };
-      };
-
-      if (data.error) {
-        console.error(`[gemini/${model}] error:`, data.error.message);
-        continue;
-      }
-
-      const parts = data.candidates?.[0]?.content?.parts ?? [];
-      const imgPart = parts.find(p => p.inlineData?.data);
-      if (!imgPart?.inlineData) {
-        console.error(`[gemini/${model}] no image part in response`);
-        continue;
-      }
-
-      console.log(`[gemini/${model}] image generated OK`);
-      return `data:${imgPart.inlineData.mimeType};base64,${imgPart.inlineData.data}`;
-    } catch (err) {
-      console.error(`[gemini/${model}] fetch error:`, err);
+    if (!resp.ok) {
+      const err = await resp.text();
+      console.error(`[dalle] HTTP ${resp.status}:`, err.slice(0, 300));
+      return null;
     }
-  }
 
-  console.error('[gemini] all models failed');
-  return null;
+    const data = await resp.json() as { data?: Array<{ url?: string }> };
+    const url = data.data?.[0]?.url;
+    if (!url) { console.error('[dalle] no url in response'); return null; }
+
+    // 2. Scarica l'immagine e convertila in base64 per il cache localStorage
+    const imgResp = await fetch(url);
+    if (!imgResp.ok) return url; // fallback: URL diretto (scade in ~1h)
+    const buf = await imgResp.arrayBuffer();
+    const b64 = Buffer.from(buf).toString('base64');
+    console.log('[dalle] image generated OK');
+    return `data:image/png;base64,${b64}`;
+  } catch (err) {
+    console.error('[dalle] error:', err);
+    return null;
+  }
 }
 
 // ─── Mock fallback ────────────────────────────────────────────────────────────
