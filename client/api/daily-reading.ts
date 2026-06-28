@@ -8,7 +8,7 @@ const claude = process.env.ANTHROPIC_API_KEY
   ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   : null;
 
-const OPENAI_KEY = process.env.OPENAI_API_KEY || '';
+const OPENAI_KEY = process.env.OPENAI_API_KEY || ''; // opzionale, non più usato per immagini
 
 // ─── Natal chart → formatted block ───────────────────────────────────────────
 
@@ -127,59 +127,22 @@ ${natalBlock.split('\n').map(l => '    '+l).join('\n')}
 
 // ─── Gemini Imagen ────────────────────────────────────────────────────────────
 
-// DALL-E 3 — funziona con API key OpenAI standard, nessuna config extra
+// Pollinations.ai — generazione immagini gratuita, nessuna API key richiesta
 async function generateImage(prompt: string): Promise<string | null> {
-  if (!OPENAI_KEY) {
-    console.log('[dalle] OPENAI_API_KEY not set — skipping image generation');
-    return null;
-  }
   try {
-    // 1. Chiedi a DALL-E 3 l'URL dell'immagine
-    const resp = await fetch('https://api.openai.com/v1/images/generations', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENAI_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-image-1',
-        prompt: prompt.slice(0, 1500),
-        n: 1,
-        size: '1024x1024',
-      }),
-    });
-
+    const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt.slice(0, 500))}?width=1024&height=1024&nologo=true&model=flux&seed=${Date.now() % 9999}`;
+    console.log('[pollinations] generating image...');
+    const resp = await fetch(url, { signal: AbortSignal.timeout(50000) });
     if (!resp.ok) {
-      const err = await resp.text();
-      console.error(`[dalle] HTTP ${resp.status}:`, err.slice(0, 300));
+      console.error(`[pollinations] HTTP ${resp.status}`);
       return null;
     }
-
-    const data = await resp.json() as {
-      data?: Array<{ b64_json?: string; url?: string }>;
-    };
-    const item = data.data?.[0];
-    if (!item) { console.error('[dalle] no data in response'); return null; }
-
-    // gpt-image-1 restituisce b64_json direttamente
-    if (item.b64_json) {
-      console.log('[dalle] image generated OK (base64)');
-      return `data:image/png;base64,${item.b64_json}`;
-    }
-
-    // fallback: vecchio formato URL (dall-e-3)
-    if (item.url) {
-      const imgResp = await fetch(item.url);
-      if (!imgResp.ok) return item.url;
-      const buf = await imgResp.arrayBuffer();
-      console.log('[dalle] image generated OK (url→base64)');
-      return `data:image/png;base64,${Buffer.from(buf).toString('base64')}`;
-    }
-
-    console.error('[dalle] no image in response:', JSON.stringify(data).slice(0, 200));
-    return null;
+    const buf = await resp.arrayBuffer();
+    const mime = resp.headers.get('content-type') || 'image/jpeg';
+    console.log('[pollinations] image generated OK');
+    return `data:${mime};base64,${Buffer.from(buf).toString('base64')}`;
   } catch (err) {
-    console.error('[dalle] error:', err);
+    console.error('[pollinations] error:', err);
     return null;
   }
 }
